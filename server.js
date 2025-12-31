@@ -92,7 +92,7 @@ kuromoji.builder({ dicPath: 'node_modules/kuromoji/dict' }).build((err, t) => {
 });
 
 app.post('/translate', async (req, res) => {
-  const { text, source, target } = req.body;
+  const { text, input, target } = req.body;
 
   if (!text || !target) {
     return res.status(400).json({ error: 'Missing text or target language.' });
@@ -124,8 +124,8 @@ app.post('/translate', async (req, res) => {
     } else if (target === 'ko') {
       romanized = romanize.romanize(result);
     } else if (target === 'en') {
-      if (source === 'ja') romanized = tokenizer ? toRomaji(text) : 'Analyzer not ready';
-      if (source === 'ko') romanized = romanize.romanize(text);
+      if (input === 'ja') romanized = tokenizer ? toRomaji(text) : 'Analyzer not ready';
+      if (input === 'ko') romanized = romanize.romanize(text);
     }
 
     res.json({ translation: result, romanization: romanized });
