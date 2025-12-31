@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: translator-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/google-cloud-key.json

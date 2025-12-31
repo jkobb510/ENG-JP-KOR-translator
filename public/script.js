@@ -140,7 +140,8 @@ function processResponse(ok, data, resultEl, originalText, source, target) {
 }
 
 async function getTranslateAPI(text, source, target) {
-  return await fetch('/translate', {
+  const backendUrl = 'https://your-render-app-name.onrender.com'; // Change this to your deployed backend URL
+  return await fetch(`${backendUrl}/translate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, source, target })
