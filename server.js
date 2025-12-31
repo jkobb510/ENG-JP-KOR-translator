@@ -92,10 +92,10 @@ kuromoji.builder({ dicPath: 'node_modules/kuromoji/dict' }).build((err, t) => {
 });
 
 app.post('/translate', async (req, res) => {
-  const { text, input, target } = req.body;
+  const { input, target } = req.body;
 
-  if (!text || !target) {
-    return res.status(400).json({ error: 'Missing text or target language.' });
+  if (!target) {
+    return res.status(400).json({ error: 'Missing target language.' });
   }
 
   const lowerText = text.toLowerCase().trim();

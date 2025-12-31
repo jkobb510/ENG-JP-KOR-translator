@@ -36,7 +36,7 @@ function processResponse(ok, data, resultEl, originalText, input, target) {
     let output = data.translation || '';
     
     if ((input === 'ja' || input === 'ko') && target === 'en') {
-      output = `${data.translation}\n${originalText}`;
+      output = `${data.translation}`;
     } else if (input === 'en' && (target === 'ja' || target === 'ko')) {
       output = data.translation || '';
     }

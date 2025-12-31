@@ -12,6 +12,7 @@ h2 {
 
 form {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   margin: 25px;
   margin-top: 50px;
@@ -41,7 +42,7 @@ select {
   position: relative;
   left: 50%;
   margin-left: -50vw;
-  background: rgb(34,34,34); /* slightly brighter than page background */
+  background: rgb(34,34,34);
   color: #e9e9e9;
   border-radius: 0;
   border: 1px solid rgba(255,255,255,0.04);
@@ -68,12 +69,11 @@ button {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin: 20px;
+  margin-top: 75px;
   font-size: 30px;
 }
 
 #result {
-  margin-top: 10px;
   white-space: pre-wrap; /* preserve line breaks */
   word-wrap: break-word;
 }
@@ -133,7 +133,7 @@ button {
 }
 
 .custom-select.open .custom-select-menu {
-  max-height: 200px; /* enough to show items */
+  max-height: 200px;
   opacity: 1;
   transform: translateY(0) scaleY(1);
 }
@@ -158,14 +158,13 @@ button {
   background: rgba(255,255,255,0.08);
 }
 
-/* keep existing textarea look */
 textarea {
   border-radius: 8px;
-  width: 300px;
+  width: 330px;
   min-height: calc(1.2em * 5 + 1rem);
   padding: 6px;
   font-size: 14px;
-  line-height: 1.2;
+  line-height: 1.5;
   resize: vertical;
   box-sizing: border-box;
   background-color: rgb(67, 67, 67);
@@ -191,7 +190,7 @@ textarea {
   cursor: not-allowed;
 }
 .pronounce-btn {
-  margin-top: 10px;
+  margin-top: 15px;
   padding: 8px 16px;
   background-color: #878787d8;
   color: white;
@@ -204,3 +203,27 @@ textarea {
 .pronounce-btn:hover {
   background-color: #45a049;
 }
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swap-btn {
+  margin-left: -1px;
+  height: 35px;
+  width: 42px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgb(67, 67, 67);
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 120ms ease, background 120ms ease;
+}
+.swap-btn:hover { background: rgb(80, 80, 80); }
+.swap-btn:active { transform: translateY(1px); }
