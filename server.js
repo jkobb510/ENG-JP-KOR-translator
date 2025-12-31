@@ -13,6 +13,23 @@ const translate = new Translate();
 const tts = new textToSpeech.TextToSpeechClient();
 const overrides = JSON.parse(fs.readFileSync('./overrides.json', 'utf8'));
 
+// Dynamic CORS: allow origins listed in ALLOWED_ORIGINS (comma-separated).
+// If ALLOWED_ORIGINS is not set, allow all origins (useful for previews/testing).
+const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || '';
+const allowedOrigins = allowedOriginsEnv.split(',').map(s => s.trim()).filter(Boolean);
+console.log('CORS allowed origins:', allowedOrigins.length ? allowedOrigins : ['*']);
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.length === 0) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+    console.warn('CORS blocked origin:', origin);
+    return callback(new Error('CORS not allowed for origin: ' + origin));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
+
 let tokenizer = null;
 
 async function toRomaji(text) {
@@ -65,22 +82,7 @@ kuromoji.builder({ dicPath: 'node_modules/kuromoji/dict' }).build((err, t) => {
 
 app.use(bodyParser.json());
 app.use(express.static('public'));
-// Dynamic CORS: allow origins listed in ALLOWED_ORIGINS (comma-separated).
-// If ALLOWED_ORIGINS is not set, allow all origins (useful for previews/testing).
-const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || '';
-const allowedOrigins = allowedOriginsEnv.split(',').map(s => s.trim()).filter(Boolean);
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow non-browser requests (e.g., curl, server-to-server)
-    if (!origin) return callback(null, true);
-    // If no ALLOWED_ORIGINS configured, allow all origins
-    if (allowedOrigins.length === 0) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
-    return callback(new Error('CORS not allowed for origin: ' + origin));
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type']
-}));
+// (CORS middleware moved earlier)
 
 app.post('/translate', async (req, res) => {
   const { text, source, target } = req.body;
