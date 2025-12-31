@@ -1,0 +1,18 @@
+{
+  "ko": {
+    "hello": "안녕하세요"
+  },
+  "ja": {
+    "hello": "こんにちは"
+  },
+  "ko_casual": {
+    "hello": "안녕"
+  },
+  "ja_casual": {
+    "hello": "やあ"
+  },
+  "ja_romanized":{
+    "こんにちは": "Konnichiwa",
+    "私は": "Watashi wa"
+  }
+}
