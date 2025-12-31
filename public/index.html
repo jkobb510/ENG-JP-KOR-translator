@@ -13,7 +13,6 @@
   
   <form id="translateForm">
     <textarea name="text" rows="5" placeholder="Enter text"></textarea>
-
     <!-- input language dropdown -->
     <div class="form-row">
       <div class="custom-select" id="inputSelect" data-value="en" aria-haspopup="listbox">
@@ -24,6 +23,7 @@
           <li role="option" data-value="ko">Korean</li>
         </ul>
       </div>
+      <button type="button" id="swapBtn" class="swap-btn" aria-label="Swap languages">⇄</button>
 
       <!-- target language dropdown -->
       <div class="custom-select" id="targetSelect" data-value="ja" aria-haspopup="listbox">
@@ -36,7 +36,7 @@
       </div>
     </div>
 
-    <!-- hidden inputs for form POST compatibility -->
+    <!-- hidden inputs -->
     <input type="hidden" name="input" value="en">
     <input type="hidden" name="target" value="ja">
   </form>
