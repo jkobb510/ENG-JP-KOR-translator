@@ -47,10 +47,10 @@ app.use(cors({
 
 let tokenizer = null;
 
-function toRomaji(text) {
+function toRomaji(inputText) {
   if (!tokenizer) return null;
 
-  const tokens = tokenizer.tokenize(text);
+  const tokens = tokenizer.tokenize(inputText);
   let reading = '';
 
   for (const token of tokens) {
@@ -92,10 +92,14 @@ kuromoji.builder({ dicPath: 'node_modules/kuromoji/dict' }).build((err, t) => {
 });
 
 app.post('/translate', async (req, res) => {
-  const { input, target } = req.body;
+  const { text, input, target } = req.body;
 
-  if (!target) {
-    return res.status(400).json({ error: 'Missing target language.' });
+  if (!text || !target) {
+    return res.status(400).json({ error: 'Missing text or target language.' });
+  }
+
+  if (!input) {
+    return res.status(400).json({ error: 'Missing input language.' });
   }
 
   const lowerText = text.toLowerCase().trim();
