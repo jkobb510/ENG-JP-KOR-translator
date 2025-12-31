@@ -140,7 +140,7 @@ function processResponse(ok, data, resultEl, originalText, source, target) {
 }
 
 async function getTranslateAPI(text, source, target) {
-  const backendUrl = 'https://translator-backend-production-67af.up.railway.app/';
+  const backendUrl = 'https://translator-backend-production-67af.up.railway.app';
   return await fetch(`${backendUrl}/translate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
