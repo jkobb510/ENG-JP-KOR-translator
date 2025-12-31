@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Translator App</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="banner">
+    <h2>Translator App (English to Japanese/Korean)</h2>
+  </div>
+  
+  <form id="translateForm">
+    <textarea name="text" rows="5" placeholder="Enter text"></textarea>
+
+    <!-- source language dropdown -->
+    <div class="form-row">
+      <div class="custom-select" id="sourceSelect" data-value="en" aria-haspopup="listbox">
+        <button type="button" class="custom-select-toggle" aria-expanded="false">English</button>
+        <ul class="custom-select-menu" role="listbox" tabindex="-1">
+          <li role="option" data-value="en" aria-selected="true">English</li>
+          <li role="option" data-value="ja">Japanese</li>
+          <li role="option" data-value="ko">Korean</li>
+        </ul>
+      </div>
+
+      <!-- target language dropdown -->
+      <div class="custom-select" id="targetSelect" data-value="ja" aria-haspopup="listbox">
+        <button type="button" class="custom-select-toggle" aria-expanded="false">Japanese</button>
+        <ul class="custom-select-menu" role="listbox" tabindex="-1">
+          <li role="option" data-value="en" aria-selected="false">English</li>
+          <li role="option" data-value="ja" aria-selected="true">Japanese</li>
+          <li role="option" data-value="ko">Korean</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- hidden inputs for form POST compatibility -->
+    <input type="hidden" name="source" value="en">
+    <input type="hidden" name="target" value="ja">
+  </form>
+
+  <div class="result">
+    <div id="result"></div>
+    <button id="pronounceBtn" class="pronounce-btn" style="display: none;">🔊</button>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+
+</html>
