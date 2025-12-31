@@ -7,6 +7,7 @@ const wanakana = require('wanakana');
 const kuromoji = require('kuromoji');
 const romanize = require('@romanize/korean');
 require('dotenv').config();
+const cors = require('cors');
 const app = express();
 const translate = new Translate();
 const tts = new textToSpeech.TextToSpeechClient();
@@ -64,6 +65,22 @@ kuromoji.builder({ dicPath: 'node_modules/kuromoji/dict' }).build((err, t) => {
 
 app.use(bodyParser.json());
 app.use(express.static('public'));
+// Dynamic CORS: allow origins listed in ALLOWED_ORIGINS (comma-separated).
+// If ALLOWED_ORIGINS is not set, allow all origins (useful for previews/testing).
+const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || '';
+const allowedOrigins = allowedOriginsEnv.split(',').map(s => s.trim()).filter(Boolean);
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow non-browser requests (e.g., curl, server-to-server)
+    if (!origin) return callback(null, true);
+    // If no ALLOWED_ORIGINS configured, allow all origins
+    if (allowedOrigins.length === 0) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+    return callback(new Error('CORS not allowed for origin: ' + origin));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
 
 app.post('/translate', async (req, res) => {
   const { text, source, target } = req.body;

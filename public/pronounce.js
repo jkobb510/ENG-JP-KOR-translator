@@ -11,7 +11,7 @@ export async function initPronounceButton() {
       pronounceBtn.textContent = '🔄';
       
       try {
-        const backendUrl = 'https://translator-backend-production-67af.up.railway.app/';
+        const backendUrl = 'https://translator-backend-production-67af.up.railway.app';
         const res = await fetch(`${backendUrl}/pronounce`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
