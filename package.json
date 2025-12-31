@@ -17,7 +17,8 @@
     "body-parser": "^2.2.1",
     "express": "^5.2.1",
     "kuromoji": "^0.1.2",
-    "wanakana": "^5.3.1"
+    "wanakana": "^5.3.1",
+    "dotenv": "^16.0.0"
   },
   "keywords": []
 }
