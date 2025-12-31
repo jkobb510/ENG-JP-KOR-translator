@@ -11,7 +11,7 @@ export async function initPronounceButton() {
       pronounceBtn.textContent = '🔄';
       
       try {
-        const backendUrl = 'https://your-render-app-name.onrender.com'; // Change this to your deployed backend URL
+        const backendUrl = 'https://translator-backend-production-67af.up.railway.app/'; // Change this to your deployed backend URL
         const res = await fetch(`${backendUrl}/pronounce`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
