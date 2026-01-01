@@ -47,14 +47,14 @@ async function translateAndRender(form) {
       return;
     }
 
-    processResponse(data, resultEl, text, input, target);
+    processResponse(data, resultEl, input, target);
   } catch (err) {
     resultEl.textContent = 'Error: Failed to connect';
     console.error('Network Error:', err);
   }
 }
 
-function processResponse(data, resultEl, originalText, input, target) {
+function processResponse(data, resultEl, input, target) {
   let output = data.translation || '';
   
   if ((input === 'ja' || input === 'ko') && target === 'en') {

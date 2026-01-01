@@ -8,7 +8,6 @@ export async function initPronounceButton() {
     
     if (textToSpeak) {
       pronounceBtn.disabled = true;
-      pronounceBtn.textContent = '🔄';
       
       try {
         const backendUrl = 'https://translator-backend-production-67af.up.railway.app';
