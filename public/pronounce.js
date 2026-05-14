@@ -10,8 +10,7 @@ export async function initPronounceButton() {
       pronounceBtn.disabled = true;
       
       try {
-        const backendUrl = 'https://translator-backend-production-67af.up.railway.app';
-        const res = await fetch(`${backendUrl}/pronounce`, {
+        const res = await fetch('/pronounce', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: textToSpeak, lang: targetLang })

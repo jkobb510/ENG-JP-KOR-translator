@@ -22,8 +22,11 @@ const romanize = require('@romanize/korean');
 const app = express();
 const overrides = JSON.parse(fs.readFileSync('./overrides.json', 'utf8'));
 
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 app.use(bodyParser.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || '';
 const allowedOrigins = allowedOriginsEnv
@@ -44,6 +47,17 @@ app.use(cors({
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 }));
+
+app.get('/', (_req, res) => {
+  res.render('index', {
+    pageTitle: 'Translator App',
+    heading: 'Translator App (English to Japanese/Korean)'
+  });
+});
+
+app.get('/health', (_req, res) => {
+  res.send('ok');
+});
 
 let tokenizer = null;
 

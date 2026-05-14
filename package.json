@@ -2,7 +2,7 @@
   "name": "translator",
   "version": "1.0.0",
   "description": "minimal Translator for English/Japanese/Korean",
-  "main": "index.html",
+  "main": "server.js",
   "scripts": {
     "start-server": "node server.js",
     "start": "node server.js",
@@ -20,6 +20,7 @@
     "body-parser": "^2.2.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
+    "ejs": "^5.0.2",
     "express": "^5.2.1",
     "kuromoji": "^0.1.2",
     "wanakana": "^5.3.1"

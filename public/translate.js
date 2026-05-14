@@ -55,17 +55,21 @@ async function translateAndRender(form) {
 }
 
 function processResponse(data, resultEl, input, target) {
-  let output = data.translation || '';
+  const romanizationEl = document.getElementById('romanization');
   
-  if ((input === 'ja' || input === 'ko') && target === 'en') {
-    output = `${data.translation}`;
-  } else if (input === 'en' && (target === 'ja' || target === 'ko')) {
-    output = data.translation || '';
-  }
-  
-  resultEl.textContent = output;
+  resultEl.textContent = data.translation || '';
   resultEl.dataset.targetLang = target;
   resultEl.dataset.textToSpeak = data.translation || '';
+  
+  if (romanizationEl) {
+    if (target !== 'en' && data.romanization) {
+      romanizationEl.textContent = data.romanization;
+      romanizationEl.style.display = 'block';
+    } else {
+      romanizationEl.textContent = '';
+      romanizationEl.style.display = 'none';
+    }
+  }
   
   const pronounceBtn = document.getElementById('pronounceBtn');
   pronounceBtn.style.display = (target === 'ja' || target === 'ko') ? 'inline-block' : 'none';
