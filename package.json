@@ -4,7 +4,6 @@
   "description": "minimal Translator for English/Japanese/Korean",
   "main": "server.js",
   "scripts": {
-    "start-server": "node server.js",
     "start": "node server.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest"
   },
