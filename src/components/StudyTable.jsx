@@ -19,12 +19,16 @@ export default function StudyTable({ canSave, onSaveRef }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
   }, [rows]);
 
-  function addRow(word, definition) {
-    if (!word || !definition) {
+  function addRow(word, translation, translation2) {
+    if (!word || !translation) {
       alert('Please enter text and get a translation first.');
       return;
     }
-    setRows(prev => [...prev, { word, definition }]);
+    setRows(prev => [...prev, { word, translation, translation2 }]);
+  }
+
+  function deleteRow(index) {
+    setRows(prev => prev.filter((_, i) => i !== index));
   }
 
   function clearRows() {
@@ -41,14 +45,27 @@ export default function StudyTable({ canSave, onSaveRef }) {
           <thead>
             <tr>
               <th>Word</th>
-              <th>Definition</th>
+              <th>Translation</th>
+              <th>Translation 2</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="studyTableBody">
             {rows.map((row, i) => (
               <tr key={i}>
                 <td>{row.word}</td>
-                <td>{row.definition}</td>
+                <td>{row.translation ?? row.definition}</td>
+                <td>{row.translation2}</td>
+                <td>
+                  <button
+                    type="button"
+                    className="delete-row-btn"
+                    aria-label="Delete row"
+                    onClick={() => deleteRow(i)}
+                  >
+                    ✕
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

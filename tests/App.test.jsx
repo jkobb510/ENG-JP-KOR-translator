@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import App from '../src/App.jsx';
 
 describe('[Unit] App', () => {
@@ -7,15 +7,9 @@ describe('[Unit] App', () => {
     global.fetch = jest.fn();
   });
 
-  test('shows Japanese as the default target language', () => {
+  test('renders the input textarea', () => {
     render(<App />);
-    expect(screen.getByRole('button', { name: 'Japanese' })).toBeInTheDocument();
-  });
-
-  test('swaps input and target languages', () => {
-    render(<App />);
-    fireEvent.click(screen.getByLabelText('Swap languages'));
-    expect(screen.getAllByRole('button', { name: 'English' })[0]).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter text')).toBeInTheDocument();
   });
 
   test('translates and renders the result', async () => {
@@ -23,12 +17,18 @@ describe('[Unit] App', () => {
     fetch.mockResolvedValueOnce({
       ok: true,
       headers: { get: () => 'application/json' },
-      json: async () => ({ translation: 'こんにちは', romanization: 'konnichiwa' })
+      json: async () => ({
+        detected: 'en',
+        ja: { text: 'こんにちは', furigana: null, romanization: 'konnichiwa' },
+        ko: { text: '안녕하세요', romanization: 'annyeonghaseyo' }
+      })
     });
 
     render(<App />);
     fireEvent.change(screen.getByPlaceholderText('Enter text'), { target: { value: 'hello' } });
-    jest.advanceTimersByTime(1000);
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
     jest.useRealTimers();
 
     await waitFor(() => {
@@ -37,6 +37,9 @@ describe('[Unit] App', () => {
         expect.objectContaining({ method: 'POST' })
       );
     });
+
+    expect(await screen.findByText('こんにちは')).toBeInTheDocument();
+    expect(screen.getByText('안녕하세요')).toBeInTheDocument();
   });
 
   test('shows an error message on network failure', async () => {
@@ -45,7 +48,9 @@ describe('[Unit] App', () => {
 
     render(<App />);
     fireEvent.change(screen.getByPlaceholderText('Enter text'), { target: { value: 'hello' } });
-    jest.advanceTimersByTime(1000);
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
     jest.useRealTimers();
 
     await waitFor(() => {

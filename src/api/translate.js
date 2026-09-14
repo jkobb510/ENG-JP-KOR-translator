@@ -1,8 +1,8 @@
-export async function getTranslateAPI(text, input, target) {
+export async function getTranslateAPI(text) {
   return fetch('/translate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, input, target })
+    body: JSON.stringify({ text })
   });
 }
 

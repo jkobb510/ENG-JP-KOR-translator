@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import LanguageSelect from './components/LanguageSelect.jsx';
 import StudyTable from './components/StudyTable.jsx';
 import { getTranslateAPI, getPronounceAPI } from './api/translate.js';
 import './styles.css';
@@ -8,29 +7,32 @@ let debounceTimeout;
 
 export default function App() {
   const [text, setText] = useState('');
-  const [input, setInput] = useState('en');
-  const [target, setTarget] = useState('ja');
-  const [result, setResult] = useState('');
-  const [romanization, setRomanization] = useState('');
-  const [pronounceDisabled, setPronounceDisabled] = useState(false);
+  const [results, setResults] = useState(null);
+  const [status, setStatus] = useState('');
+  const [pronounceDisabled, setPronounceDisabled] = useState({});
   const saveRowRef = useRef(() => {});
 
   function scheduleTranslate(nextText) {
     clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => triggerTranslate(nextText, input, target), 1000);
+    debounceTimeout = setTimeout(() => triggerTranslate(nextText), 1000);
   }
 
-  async function triggerTranslate(nextText = text, nextInput = input, nextTarget = target) {
-    if (!nextText.trim()) return;
-    setResult('Translating...');
+  async function triggerTranslate(nextText = text) {
+    if (!nextText.trim()) {
+      setResults(null);
+      setStatus('');
+      return;
+    }
+    setStatus('Translating...');
 
     try {
-      const res = await getTranslateAPI(nextText, nextInput, nextTarget);
+      const res = await getTranslateAPI(nextText);
       const contentType = res.headers.get('content-type');
 
       if (!contentType || !contentType.includes('application/json')) {
         console.error('Received non-JSON response:', await res.text());
-        setResult('Error: Server returned invalid response');
+        setStatus('Error: Server returned invalid response');
+        setResults(null);
         return;
       }
 
@@ -38,15 +40,17 @@ export default function App() {
 
       if (!res.ok) {
         console.error('Translation Request Failed:', data.error);
-        setResult('Error: ' + (data.error || 'Unknown error'));
+        setStatus('Error: ' + (data.error || 'Unknown error'));
+        setResults(null);
         return;
       }
 
-      setResult(data.translation || '');
-      setRomanization(nextTarget !== 'en' && data.romanization ? data.romanization : '');
+      setResults(data);
+      setStatus('');
     } catch (err) {
       console.error('Network Error:', err);
-      setResult('Error: Failed to connect');
+      setStatus('Error: Failed to connect');
+      setResults(null);
     }
   }
 
@@ -56,29 +60,11 @@ export default function App() {
     scheduleTranslate(value);
   }
 
-  function handleInputChange(value) {
-    setInput(value);
-    triggerTranslate(text, value, target);
-  }
-
-  function handleTargetChange(value) {
-    setTarget(value);
-    triggerTranslate(text, input, value);
-  }
-
-  function handleSwap() {
-    const newInput = target;
-    const newTarget = input;
-    setInput(newInput);
-    setTarget(newTarget);
-    triggerTranslate(text, newInput, newTarget);
-  }
-
-  async function handlePronounce() {
-    if (!result) return;
-    setPronounceDisabled(true);
+  async function handlePronounce(lang, spokenText) {
+    if (!spokenText) return;
+    setPronounceDisabled(prev => ({ ...prev, [lang]: true }));
     try {
-      const res = await getPronounceAPI(result, target);
+      const res = await getPronounceAPI(spokenText, lang);
       if (!res.ok) throw new Error('TTS failed');
       const audioBlob = await res.blob();
       const audio = new Audio(URL.createObjectURL(audioBlob));
@@ -87,16 +73,27 @@ export default function App() {
       console.error('Pronunciation Error:', err);
       alert('Failed to pronounce');
     } finally {
-      setPronounceDisabled(false);
+      setPronounceDisabled(prev => ({ ...prev, [lang]: false }));
     }
   }
 
-  function handleSaveToStudy() {
-    saveRowRef.current(text.trim(), result.trim());
+  function formatJapaneseCell(block) {
+    return block.furigana ? `${block.text} (${block.furigana})` : block.text;
   }
 
-  const showResult = result && !result.startsWith('Error');
-  const showPronounce = target === 'ja' || target === 'ko';
+  function handleSaveToStudy() {
+    if (!results) return;
+
+    const word = results.detected === 'ja' ? formatJapaneseCell(results.ja) : text.trim();
+    const translations = [];
+    if (results.detected !== 'ja') translations.push(formatJapaneseCell(results.ja));
+    if (results.ko) translations.push(results.ko.text);
+    if (results.en) translations.push(results.en.text);
+
+    saveRowRef.current(word, translations[0] ?? '', translations[1] ?? '');
+  }
+
+  const showResult = results && !status.startsWith('Error');
 
   return (
     <>
@@ -112,35 +109,50 @@ export default function App() {
           value={text}
           onChange={handleTextChange}
         />
-
-        <div className="form-row">
-          <LanguageSelect id="inputSelect" value={input} onChange={handleInputChange} />
-          <button type="button" id="swapBtn" className="swap-btn" aria-label="Swap languages" onClick={handleSwap}>
-            ⇄
-          </button>
-          <LanguageSelect id="targetSelect" value={target} onChange={handleTargetChange} />
-        </div>
       </form>
 
       <div className="result">
-        <div id="result">{result}</div>
-        <div id="romanization" style={{ display: romanization ? 'block' : 'none' }}>
-          {romanization}
-        </div>
-        {showPronounce && (
-          <button
-            id="pronounceBtn"
-            className="pronounce-btn"
-            disabled={pronounceDisabled}
-            onClick={handlePronounce}
-          >
-            🔊
-          </button>
-        )}
+        {status && <div id="status">{status}</div>}
+
         {showResult && (
-          <button type="button" className="save-to-study-btn" onClick={handleSaveToStudy}>
-            Save to Study Table
-          </button>
+          <div className="translation-results">
+            <div className="lang-block ja-block">
+              {results.ja.furigana && (
+                <div className="furigana">{results.ja.furigana}</div>
+              )}
+              <div
+                className={`ja-text pronounceable${pronounceDisabled.ja ? ' disabled' : ''}`}
+                onClick={() => handlePronounce('ja', results.ja.text)}
+              >
+                {results.ja.text}
+              </div>
+              {results.ja.romanization && (
+                <div className="romanization">{results.ja.romanization}</div>
+              )}
+            </div>
+
+            {results.ko && (
+              <div className="lang-block ko-block">
+                <div
+                  className={`ko-text pronounceable${pronounceDisabled.ko ? ' disabled' : ''}`}
+                  onClick={() => handlePronounce('ko', results.ko.text)}
+                >
+                  {results.ko.text}
+                </div>
+                <div className="romanization">{results.ko.romanization}</div>
+              </div>
+            )}
+
+            {results.en && (
+              <div className="lang-block en-block">
+                <div className="en-text">{results.en.text}</div>
+              </div>
+            )}
+
+            <button type="button" className="save-to-study-btn" onClick={handleSaveToStudy}>
+              Save to Study Table
+            </button>
+          </div>
         )}
       </div>
 

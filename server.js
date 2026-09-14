@@ -55,7 +55,10 @@ app.get(/^(?!\/(translate|pronounce|health)).*/, (_req, res) => {
 
 let tokenizer = null;
 
-function toRomaji(inputText) {
+const SUPPORTED_LANGUAGES = ['en', 'ja', 'ko'];
+const KANJI_REGEX = /[\u4e00-\u9faf]/;
+
+function toReading(inputText) {
   if (!tokenizer) return null;
 
   const tokens = tokenizer.tokenize(inputText);
@@ -81,7 +84,12 @@ function toRomaji(inputText) {
     reading = reading.replace(/は$/, 'わ');
   }
 
-  return wanakana.toRomaji(reading);
+  return reading;
+}
+
+function toRomaji(inputText) {
+  const reading = toReading(inputText);
+  return reading ? wanakana.toRomaji(reading) : null;
 }
 
 kuromoji.builder({ dicPath: 'node_modules/kuromoji/dict' }).build((err, t) => {
@@ -99,48 +107,56 @@ kuromoji.builder({ dicPath: 'node_modules/kuromoji/dict' }).build((err, t) => {
   });
 });
 
-app.post('/translate', async (req, res) => {
-  const { text, input, target } = req.body;
+async function translateTo(text, lowerText, lang) {
+  const customMatch = overrides[lang]?.[lowerText];
+  let result = customMatch || (await translate.translate(text, lang))[0];
 
-  if (!text || !target) {
-    return res.status(400).json({ error: 'Missing text or target language.' });
+  if (overrides[lang]) {
+    for (const [key, value] of Object.entries(overrides[lang])) {
+      const regex = new RegExp(`\\b${key}\\b`, 'gi');
+      result = result.replace(regex, value);
+    }
   }
 
-  if (!input) {
-    return res.status(400).json({ error: 'Missing input language.' });
+  return result;
+}
+
+app.post('/translate', async (req, res) => {
+  const { text } = req.body;
+
+  if (!text || !text.trim()) {
+    return res.status(400).json({ error: 'Missing text.' });
   }
 
   const lowerText = text.toLowerCase().trim();
 
   try {
-    let result;
-    let romanized = null;
+    const [detection] = await translate.detect(text);
+    const rawDetected = Array.isArray(detection) ? detection[0].language : detection.language;
+    const detected = SUPPORTED_LANGUAGES.includes(rawDetected) ? rawDetected : 'en';
 
-    const customMatch = overrides[target]?.[lowerText];
-    if (customMatch) {
-      result = customMatch;
-    } else {
-      const [translated] = await translate.translate(text, target);
-      result = translated;
+    const response = { detected };
+
+    // Japanese is always shown: echoed with furigana/romaji if it's the input, otherwise translated
+    const jaText = detected === 'ja' ? text : await translateTo(text, lowerText, 'ja');
+    const jaReading = tokenizer ? toReading(jaText) : null;
+    response.ja = {
+      text: jaText,
+      furigana: jaReading && KANJI_REGEX.test(jaText) ? jaReading : null,
+      romanization: jaReading ? wanakana.toRomaji(jaReading) : null
+    };
+
+    if (detected !== 'ko') {
+      const koText = await translateTo(text, lowerText, 'ko');
+      response.ko = { text: koText, romanization: romanize.romanize(koText) };
     }
 
-    if (overrides[target]) {
-      for (const [key, value] of Object.entries(overrides[target])) {
-        const regex = new RegExp(`\\b${key}\\b`, 'gi');
-        result = result.replace(regex, value);
-      }
+    if (detected !== 'en') {
+      const enText = await translateTo(text, lowerText, 'en');
+      response.en = { text: enText };
     }
 
-    if (target === 'ja') {
-      romanized = tokenizer ? toRomaji(result) : 'Analyzer not ready';
-    } else if (target === 'ko') {
-      romanized = romanize.romanize(result);
-    } else if (target === 'en') {
-      if (input === 'ja') romanized = tokenizer ? toRomaji(text) : 'Analyzer not ready';
-      if (input === 'ko') romanized = romanize.romanize(text);
-    }
-
-    res.json({ translation: result, romanization: romanized });
+    res.json(response);
 
   } catch (err) {
     console.error('Translation Error:', err);
