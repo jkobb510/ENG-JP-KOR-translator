@@ -22,7 +22,7 @@ This application is a full-stack translator featuring a Node.js/Express server-s
 ## Architecture
 
 ### Backend (Railway)
-- **Hosting:** Railway ([translator-backend-production-67af.up.railway.app](https://translator-backend-production-67af.up.railway.app))
+- **Hosting:** Railway ([https://translator-jp-kr-67af.up.railway.app]([https://translator-backend-production-67af.up.railway.app](https://translator-jp-kr-67af.up.railway.app))
 - **Framework:** Express.js
 - **APIs:** Google Cloud Translation v2, Google Cloud Text-to-Speech
 - **Environment:** Node.js with CommonJS modules
