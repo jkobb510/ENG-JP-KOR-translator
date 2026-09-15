@@ -113,13 +113,6 @@ button {
   font-size: 20px;
 }
 
-.romanization {
-  font-style: italic;
-  margin-top: 8px;
-  font-size: 18px;
-  color: #b0b0b0;
-}
-
 textarea {
   border-radius: 8px;
   width: 330px;

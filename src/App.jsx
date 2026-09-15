@@ -126,9 +126,6 @@ export default function App() {
               >
                 {results.ja.text}
               </div>
-              {results.ja.romanization && (
-                <div className="romanization">{results.ja.romanization}</div>
-              )}
             </div>
 
             {results.ko && (
@@ -139,7 +136,6 @@ export default function App() {
                 >
                   {results.ko.text}
                 </div>
-                <div className="romanization">{results.ko.romanization}</div>
               </div>
             )}
 

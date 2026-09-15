@@ -2,18 +2,18 @@ import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'studyTable';
 
-export default function StudyTable({ canSave, onSaveRef }) {
-  const [rows, setRows] = useState([]);
-
-  useEffect(() => {
+function loadRows() {
+  try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return;
-    try {
-      setRows(JSON.parse(stored));
-    } catch (e) {
-      console.error('Failed to load study table from localStorage:', e);
-    }
-  }, []);
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    console.error('Failed to load study table from localStorage:', e);
+    return [];
+  }
+}
+
+export default function StudyTable({ canSave, onSaveRef }) {
+  const [rows, setRows] = useState(loadRows);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
