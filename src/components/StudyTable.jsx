@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import copyIcon from '../copy.png';
 
 const STORAGE_KEY = 'studyTable';
 
@@ -31,9 +32,27 @@ export default function StudyTable({ canSave, onSaveRef }) {
     setRows(prev => prev.filter((_, i) => i !== index));
   }
 
+  function updateCell(index, field, value) {
+    setRows(prev => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+  }
+
+  function handleCellKeyDown(ev) {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      ev.target.blur();
+    }
+  }
+
   function clearRows() {
     setRows([]);
     localStorage.removeItem(STORAGE_KEY);
+  }
+
+  function copyTable() {
+    const header = ['Word', 'Translation', 'Translation 2'];
+    const lines = [header, ...rows.map(row => [row.word, row.translation ?? row.definition ?? '', row.translation2 ?? ''])];
+    const text = lines.map(cols => cols.join('\t')).join('\n');
+    navigator.clipboard.writeText(text);
   }
 
   onSaveRef.current = addRow;
@@ -53,9 +72,30 @@ export default function StudyTable({ canSave, onSaveRef }) {
           <tbody id="studyTableBody">
             {rows.map((row, i) => (
               <tr key={i}>
-                <td>{row.word}</td>
-                <td>{row.translation ?? row.definition}</td>
-                <td>{row.translation2}</td>
+                <td
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(ev) => updateCell(i, 'word', ev.target.textContent)}
+                  onKeyDown={handleCellKeyDown}
+                >
+                  {row.word}
+                </td>
+                <td
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(ev) => updateCell(i, 'translation', ev.target.textContent)}
+                  onKeyDown={handleCellKeyDown}
+                >
+                  {row.translation ?? row.definition}
+                </td>
+                <td
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(ev) => updateCell(i, 'translation2', ev.target.textContent)}
+                  onKeyDown={handleCellKeyDown}
+                >
+                  {row.translation2}
+                </td>
                 <td>
                   <button
                     type="button"
@@ -72,6 +112,9 @@ export default function StudyTable({ canSave, onSaveRef }) {
         </table>
       </div>
       <div className={`delete-button-container${rows.length ? ' show' : ''}`}>
+        <button type="button" className="copy-table-btn" onClick={copyTable}>
+          <img src={copyIcon} alt="" /> Copy Table
+        </button>
         <button type="button" className="delete-study-btn" onClick={clearRows}>
           Delete Study Table
         </button>
