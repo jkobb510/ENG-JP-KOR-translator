@@ -48,11 +48,31 @@ export default function StudyTable({ canSave, onSaveRef }) {
     localStorage.removeItem(STORAGE_KEY);
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  }
+
   function copyTable() {
     const header = ['Word', 'Translation', 'Translation 2'];
     const lines = [header, ...rows.map(row => [row.word, row.translation ?? row.definition ?? '', row.translation2 ?? ''])];
     const text = lines.map(cols => cols.join('\t')).join('\n');
-    navigator.clipboard.writeText(text);
+
+    const cellStyle = 'border: 1px solid #000; padding: 6px 10px;';
+    const tableStyle = 'border-collapse: collapse;';
+    const rowsHtml = lines
+      .map((cols) => `<tr>${cols.map((col) => `<td style="${cellStyle}">${escapeHtml(col)}</td>`).join('')}</tr>`)
+      .join('');
+    const html = `<table style="${tableStyle}">${rowsHtml}</table>`;
+
+    if (navigator.clipboard?.write && window.ClipboardItem) {
+      const item = new ClipboardItem({
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+        'text/html': new Blob([html], { type: 'text/html' }),
+      });
+      navigator.clipboard.write([item]).catch(() => navigator.clipboard.writeText(text));
+    } else {
+      navigator.clipboard.writeText(text);
+    }
   }
 
   onSaveRef.current = addRow;
