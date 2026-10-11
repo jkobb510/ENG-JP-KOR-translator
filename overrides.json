@@ -1,9 +1,13 @@
 {
   "ko": {
-    "hello": "안녕하세요"
+    "hello": "안녕하세요",
+    "水冷麺": "물냉면"
   },
   "ja": {
     "hello": "こんにちは"
+  },
+  "en": {
+    "水冷麺": "Cold noodle soup"
   },
   "ko_casual": {
     "hello": "안녕"
@@ -14,5 +18,8 @@
   "ja_romanized":{
     "こんにちは": "Konnichiwa",
     "私は": "Watashi wa"
+  },
+  "ja_furigana": {
+    "水冷麺": "みずれいめん"
   }
 }

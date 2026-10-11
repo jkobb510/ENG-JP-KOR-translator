@@ -145,7 +145,7 @@ app.post('/translate', async (req, res) => {
 
     // Japanese is always shown: echoed with furigana/romaji if it's the input, otherwise translated
     const jaText = detected === 'ja' ? text : await translateTo(text, lowerText, 'ja');
-    const jaReading = tokenizer ? toReading(jaText) : null;
+    const jaReading = overrides.ja_furigana?.[jaText] || (tokenizer ? toReading(jaText) : null);
     response.ja = {
       text: jaText,
       furigana: jaReading && KANJI_REGEX.test(jaText) ? jaReading : null,
