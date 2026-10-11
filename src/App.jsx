@@ -98,7 +98,7 @@ export default function App() {
   return (
     <>
       <div className="banner">
-        <h2>Translator App (English to Japanese/Korean)</h2>
+        <h2>Translator App (Japanese/Korean)</h2>
       </div>
 
       <form id="translateForm" onSubmit={(e) => e.preventDefault()}>
