@@ -133,7 +133,13 @@ app.post('/translate', async (req, res) => {
   try {
     const [detection] = await translate.detect(text);
     const rawDetected = Array.isArray(detection) ? detection[0].language : detection.language;
-    const detected = SUPPORTED_LANGUAGES.includes(rawDetected) ? rawDetected : 'en';
+    let detected = SUPPORTED_LANGUAGES.includes(rawDetected) ? rawDetected : 'en';
+
+    // Google sometimes detects kanji-only text (e.g. "全部") as Chinese; since
+    // this app only supports en/ja/ko, treat Japanese-looking text as ja.
+    if (detected === 'en' && wanakana.isJapanese(text)) {
+      detected = 'ja';
+    }
 
     const response = { detected };
 
