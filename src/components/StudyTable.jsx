@@ -1,39 +1,27 @@
-import { useEffect, useState } from 'react';
-import copyIcon from '../copy.png';
+import { useState } from 'react';
+import imageIcon from '../image.png';
+import { useStudyRows } from '../hooks/useStudyRows.js';
+import ImageModal from './ImageModal.jsx';
+import StudyTableActions from './StudyTableActions.jsx';
+import DeleteRowButton from './DeleteRowButton.jsx';
+import EditableCell from './EditableCell.jsx';
 
-const STORAGE_KEY = 'studyTable';
+export default function StudyTable({ onSaveRef }) {
+  const { rows, addRow, saveRow, deleteRow, clearRows } = useStudyRows();
+  const [imageModalIndex, setImageModalIndex] = useState(null);
 
-function loadRows() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (e) {
-    console.error('Failed to load study table from localStorage:', e);
-    return [];
-  }
-}
-
-export default function StudyTable({ canSave, onSaveRef }) {
-  const [rows, setRows] = useState(loadRows);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-  }, [rows]);
-
-  function addRow(word, translation, translation2) {
+  function handleAddRow(word, translation, translation2) {
     if (!word || !translation) {
       alert('Please enter text and get a translation first.');
       return;
     }
-    setRows(prev => [...prev, { word, translation, translation2 }]);
-  }
-
-  function deleteRow(index) {
-    setRows(prev => prev.filter((_, i) => i !== index));
+    addRow({ word, translation, translation2 });
   }
 
   function updateCell(index, field, value) {
-    setRows(prev => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+    const row = rows[index];
+    if (!row) return;
+    saveRow({ ...row, [field]: value });
   }
 
   function handleCellKeyDown(ev) {
@@ -43,39 +31,7 @@ export default function StudyTable({ canSave, onSaveRef }) {
     }
   }
 
-  function clearRows() {
-    setRows([]);
-    localStorage.removeItem(STORAGE_KEY);
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  }
-
-  function copyTable() {
-    const header = ['Word', 'Translation', 'Translation 2'];
-    const lines = [header, ...rows.map(row => [row.word, row.translation ?? row.definition ?? '', row.translation2 ?? ''])];
-    const text = lines.map(cols => cols.join('\t')).join('\n');
-
-    const cellStyle = 'border: 1px solid #000; padding: 6px 10px;';
-    const tableStyle = 'border-collapse: collapse;';
-    const rowsHtml = lines
-      .map((cols) => `<tr>${cols.map((col) => `<td style="${cellStyle}">${escapeHtml(col)}</td>`).join('')}</tr>`)
-      .join('');
-    const html = `<table style="${tableStyle}">${rowsHtml}</table>`;
-
-    if (navigator.clipboard?.write && window.ClipboardItem) {
-      const item = new ClipboardItem({
-        'text/plain': new Blob([text], { type: 'text/plain' }),
-        'text/html': new Blob([html], { type: 'text/html' }),
-      });
-      navigator.clipboard.write([item]).catch(() => navigator.clipboard.writeText(text));
-    } else {
-      navigator.clipboard.writeText(text);
-    }
-  }
-
-  onSaveRef.current = addRow;
+  onSaveRef.current = handleAddRow;
 
   return (
     <>
@@ -86,59 +42,55 @@ export default function StudyTable({ canSave, onSaveRef }) {
               <th>Word</th>
               <th>Translation</th>
               <th>Translation 2</th>
-              <th></th>
+              <th>Add image</th>
+              <th>Delete</th>
             </tr>
           </thead>
           <tbody id="studyTableBody">
             {rows.map((row, i) => (
-              <tr key={i}>
-                <td
-                  contentEditable
-                  suppressContentEditableWarning
-                  onBlur={(ev) => updateCell(i, 'word', ev.target.textContent)}
+              <tr key={row.id}>
+                <EditableCell
+                  value={row.word}
+                  onSave={(value) => updateCell(i, 'word', value)}
                   onKeyDown={handleCellKeyDown}
-                >
-                  {row.word}
-                </td>
-                <td
-                  contentEditable
-                  suppressContentEditableWarning
-                  onBlur={(ev) => updateCell(i, 'translation', ev.target.textContent)}
+                />
+                <EditableCell
+                  value={row.translation}
+                  onSave={(value) => updateCell(i, 'translation', value)}
                   onKeyDown={handleCellKeyDown}
-                >
-                  {row.translation ?? row.definition}
-                </td>
-                <td
-                  contentEditable
-                  suppressContentEditableWarning
-                  onBlur={(ev) => updateCell(i, 'translation2', ev.target.textContent)}
+                />
+                <EditableCell
+                  value={row.translation2}
+                  onSave={(value) => updateCell(i, 'translation2', value)}
                   onKeyDown={handleCellKeyDown}
-                >
-                  {row.translation2}
-                </td>
+                />
                 <td>
                   <button
                     type="button"
-                    className="delete-row-btn"
-                    aria-label="Delete row"
-                    onClick={() => deleteRow(i)}
+                    className="add-text-to-image-btn"
+                    aria-label="Add image"
+                    onClick={() => setImageModalIndex(i)}
                   >
-                    ✕
+                    <img src={imageIcon} alt="" />
                   </button>
+                </td>
+                <td>
+                  <DeleteRowButton onClick={() => deleteRow(row.id)} />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className={`delete-button-container${rows.length ? ' show' : ''}`}>
-        <button type="button" className="copy-table-btn" onClick={copyTable}>
-          <img src={copyIcon} alt="" /> Copy Table
-        </button>
-        <button type="button" className="delete-study-btn" onClick={clearRows}>
-          Delete Study Table
-        </button>
-      </div>
+      <StudyTableActions rows={rows} onClear={clearRows} />
+
+      {imageModalIndex !== null && (
+        <ImageModal
+          row={rows[imageModalIndex]}
+          onClose={() => setImageModalIndex(null)}
+          onUpdateRow={saveRow}
+        />
+      )}
     </>
   );
 }

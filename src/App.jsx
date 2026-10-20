@@ -152,7 +152,7 @@ export default function App() {
         )}
       </div>
 
-      <StudyTable canSave={showResult} onSaveRef={saveRowRef} />
+      <StudyTable onSaveRef={saveRowRef} />
     </>
   );
 }
