@@ -115,14 +115,14 @@ button {
 
 textarea {
   border-radius: 8px;
-  width: 330px;
+  width: 500px;
   min-height: calc(1.2em * 5 + 1rem);
   padding: 6px;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
   resize: vertical;
   box-sizing: border-box;
-  background-color: rgb(67, 67, 67);
+  background-color: rgb(50, 50, 50);
   color: white;
   margin: 5px;
   border-width: 1px;
