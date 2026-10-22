@@ -5,6 +5,7 @@ import ImageModal from './ImageModal.jsx';
 import StudyTableActions from './StudyTableActions.jsx';
 import DeleteRowButton from './DeleteRowButton.jsx';
 import EditableCell from './EditableCell.jsx';
+import RecordButton from './RecordButton.jsx';
 
 export default function StudyTable({ onSaveRef }) {
   const { rows, addRow, saveRow, deleteRow, clearRows } = useStudyRows();
@@ -43,6 +44,7 @@ export default function StudyTable({ onSaveRef }) {
               <th>Translation</th>
               <th>Translation 2</th>
               <th>Add image</th>
+              <th>Record</th>
               <th>Delete</th>
             </tr>
           </thead>
@@ -73,6 +75,9 @@ export default function StudyTable({ onSaveRef }) {
                   >
                     <img src={imageIcon} alt="" />
                   </button>
+                </td>
+                <td>
+                  <RecordButton row={row} onUpdateRow={saveRow} />
                 </td>
                 <td>
                   <DeleteRowButton onClick={() => deleteRow(row.id)} />

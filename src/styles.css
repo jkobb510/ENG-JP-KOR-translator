@@ -424,3 +424,45 @@ textarea {
   margin-top: 20px;
   cursor: pointer;
 }
+.record-btn {
+  height: 24px;
+  width: 24px;
+  padding: 0;
+  border-radius: 50%;
+  margin-left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.record-btn img {
+  height: 24px;
+  width: 24px;
+  object-fit: contain;
+  display: block;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.record-modal {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  width: auto;
+}
+
+.record-modal-btn {
+  width: auto;
+  padding: 0 16px;
+  margin-left: 0;
+}
+
+.record-modal-delete-btn {
+  background-color: rgb(163, 8, 36);
+}
+
+.record-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
