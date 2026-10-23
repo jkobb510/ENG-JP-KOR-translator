@@ -18,11 +18,12 @@ const tts = new textToSpeech.TextToSpeechClient();
 const wanakana = require('wanakana');
 const kuromoji = require('kuromoji');
 const romanize = require('@romanize/korean');
+const { Pool } = require('pg');
 
 const app = express();
 const overrides = JSON.parse(fs.readFileSync('./overrides.json', 'utf8'));
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '25mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
 
 const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || '';
@@ -49,7 +50,102 @@ app.get('/health', (_req, res) => {
   res.send('ok');
 });
 
-app.get(/^(?!\/(translate|pronounce|health)).*/, (_req, res) => {
+const dbUrl = process.env.POSTGRES_PRIVATE_URL || process.env.DATABASE_URL;
+const pool = dbUrl ? new Pool({ connectionString: dbUrl }) : null;
+const ROW_COLUMNS = ['word', 'translation', 'translation2', 'furigana', 'image', 'audio'];
+
+if (pool) {
+  pool.query(`
+    CREATE TABLE IF NOT EXISTS study_rows (
+      id SERIAL PRIMARY KEY,
+      word TEXT NOT NULL DEFAULT '',
+      translation TEXT NOT NULL DEFAULT '',
+      translation2 TEXT NOT NULL DEFAULT '',
+      furigana TEXT NOT NULL DEFAULT '',
+      image TEXT,
+      audio TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `).catch(err => console.error('Failed to create study_rows table:', err.message));
+} else {
+  console.warn('No POSTGRES_PRIVATE_URL/DATABASE_URL set; study rows are not persisted on the server.');
+}
+
+function requireDb(_req, res, next) {
+  if (!pool) return res.status(503).json({ error: 'Database not configured.' });
+  next();
+}
+
+function rowValues(body) {
+  return ROW_COLUMNS.map(col => (body?.[col] ?? (col === 'image' || col === 'audio' ? null : '')));
+}
+
+app.get('/api/rows', requireDb, async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, ${ROW_COLUMNS.join(', ')} FROM study_rows ORDER BY id`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Load rows failed:', err);
+    res.status(500).json({ error: 'Failed to load rows.' });
+  }
+});
+
+app.post('/api/rows', requireDb, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO study_rows (${ROW_COLUMNS.join(', ')}) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      rowValues(req.body)
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error('Create row failed:', err);
+    res.status(500).json({ error: 'Failed to create row.' });
+  }
+});
+
+app.put('/api/rows/:id', requireDb, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid id.' });
+  try {
+    const assignments = ROW_COLUMNS.map((col, i) => `${col} = $${i + 1}`).join(', ');
+    const result = await pool.query(
+      `UPDATE study_rows SET ${assignments}, updated_at = now() WHERE id = $7`,
+      [...rowValues(req.body), id]
+    );
+    if (!result.rowCount) return res.status(404).json({ error: 'Row not found.' });
+    res.json({ id });
+  } catch (err) {
+    console.error('Update row failed:', err);
+    res.status(500).json({ error: 'Failed to update row.' });
+  }
+});
+
+app.delete('/api/rows/:id', requireDb, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid id.' });
+  try {
+    await pool.query('DELETE FROM study_rows WHERE id = $1', [id]);
+    res.status(204).end();
+  } catch (err) {
+    console.error('Delete row failed:', err);
+    res.status(500).json({ error: 'Failed to delete row.' });
+  }
+});
+
+app.delete('/api/rows', requireDb, async (_req, res) => {
+  try {
+    await pool.query('TRUNCATE study_rows');
+    res.status(204).end();
+  } catch (err) {
+    console.error('Clear rows failed:', err);
+    res.status(500).json({ error: 'Failed to clear rows.' });
+  }
+});
+
+app.get(/^(?!\/(translate|pronounce|health|api)).*/, (_req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 

@@ -6,7 +6,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/translate': 'http://localhost:3000',
-      '/pronounce': 'http://localhost:3000'
+      '/pronounce': 'http://localhost:3000',
+      '/api': 'http://localhost:3000'
     }
   },
   build: {
