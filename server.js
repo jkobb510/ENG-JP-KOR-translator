@@ -58,15 +58,91 @@ let tokenizer = null;
 const SUPPORTED_LANGUAGES = ['en', 'ja', 'ko'];
 const KANJI_REGEX = /[\u4e00-\u9faf]/;
 
+const DIGIT_READINGS = ['ぜろ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう'];
+const NUMBER_REGEX = /^[0-9\uff10-\uff19]+$/;
+
+// Counter-specific readings for the whole number (hours/months, 1-12).
+const HOUR_READINGS = { 1: 'いち', 2: 'に', 3: 'さん', 4: 'よ', 5: 'ご', 6: 'ろく', 7: 'しち', 8: 'はち', 9: 'く', 10: 'じゅう', 11: 'じゅういち', 12: 'じゅうに' };
+const MONTH_READINGS = { ...HOUR_READINGS, 4: 'し' };
+const MINUTE_READINGS = { 1: 'いっ', 3: 'さん', 4: 'よん', 6: 'ろっ', 8: 'はっ', 10: 'じゅっ' };
+const PUN_NUMBERS = new Set([1, 3, 4, 6, 8, 10]);
+
+function intToKana(n) {
+  if (n === 0) return DIGIT_READINGS[0];
+  const units = [
+    [100000000, 'おく'], [10000, 'まん'], [1000, 'せん'], [100, 'ひゃく'], [10, 'じゅう'],
+  ];
+  const irregular = { 300: 'さんびゃく', 600: 'ろっぴゃく', 800: 'はっぴゃく', 3000: 'さんぜん', 8000: 'はっせん' };
+  let out = '';
+  let rest = n;
+  for (const [value, label] of units) {
+    const count = Math.floor(rest / value);
+    if (!count) continue;
+    rest %= value;
+    if (value >= 10000) {
+      out += intToKana(count) + label;
+    } else if (irregular[count * value]) {
+      out += irregular[count * value];
+    } else {
+      out += (count === 1 ? '' : DIGIT_READINGS[count]) + label;
+    }
+  }
+  if (rest) out += DIGIT_READINGS[rest];
+  return out;
+}
+
+function numberReading(digits, counter) {
+  const n = Number(digits.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xfee0)));
+  if (!Number.isSafeInteger(n)) return null;
+  if (counter === '時' && HOUR_READINGS[n]) return HOUR_READINGS[n];
+  if (counter === '月' && MONTH_READINGS[n]) return MONTH_READINGS[n];
+  return intToKana(n);
+}
+
+function minuteReading(digits) {
+  const n = Number(digits.replace(/[\uff10-\uff19]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xfee0)));
+  if (!Number.isSafeInteger(n) || n < 1 || n > 59) return null;
+  const ones = n % 10;
+  const base = ones === 0 ? n : n - ones;
+  const tens = base ? intToKana(base) : '';
+  const lastIsPun = PUN_NUMBERS.has(ones || 10);
+  const onesKana = ones === 0 ? '' : (MINUTE_READINGS[ones] ?? DIGIT_READINGS[ones]);
+  if (ones === 0) return tens.replace(/じゅう$/, 'じゅっ') + 'ぷん';
+  return tens + onesKana + (lastIsPun ? 'ぷん' : 'ふん');
+}
+
 function toReading(inputText) {
   if (!tokenizer) return null;
 
   const tokens = tokenizer.tokenize(inputText);
   let reading = '';
 
-  for (const token of tokens) {
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
     const surface = token.surface_form;
     const kanaReading = token.reading;
+
+    if (surface === '月' && i > 0 && NUMBER_REGEX.test(tokens[i - 1].surface_form)) {
+      reading += 'がつ';
+      continue;
+    }
+
+    if (NUMBER_REGEX.test(surface)) {
+      const next = tokens[i + 1]?.surface_form;
+      if (next === '分') {
+        const minutes = minuteReading(surface);
+        if (minutes) {
+          reading += minutes;
+          i++;
+          continue;
+        }
+      }
+      const numeric = numberReading(surface, next);
+      if (numeric) {
+        reading += numeric;
+        continue;
+      }
+    }
 
     if (token.pos === '助詞' || token.pos === '感動詞') {
       if (surface === 'は') { reading += 'わ'; continue; }
@@ -85,6 +161,18 @@ function toReading(inputText) {
   }
 
   return reading;
+}
+
+const CJK_PUNCTUATION = { '。': '.', '、': ',', '：': ':', '；': ';', '！': '!', '？': '?', '，': ',', '．': '.', '「': '"', '」': '"', '（': '(', '）': ')' };
+
+function romanizeKorean(text) {
+  const normalized = text.replace(/[。、：；！？，．「」（）]/g, c => CJK_PUNCTUATION[c]);
+  try {
+    return romanize.romanize(normalized);
+  } catch (err) {
+    console.warn('Korean romanization failed:', err.message);
+    return null;
+  }
 }
 
 function toRomaji(inputText) {
@@ -107,14 +195,32 @@ kuromoji.builder({ dicPath: 'node_modules/kuromoji/dict' }).build((err, t) => {
   });
 });
 
-async function translateTo(text, lowerText, lang) {
-  const customMatch = overrides[lang]?.[lowerText];
-  let result = customMatch || (await translate.translate(text, lang))[0];
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-  if (overrides[lang]) {
-    for (const [key, value] of Object.entries(overrides[lang])) {
-      const regex = new RegExp(`\\b${key}\\b`, 'gi');
-      result = result.replace(regex, value);
+async function translateTo(text, lowerText, lang) {
+  const langOverrides = overrides[lang];
+  const customMatch = langOverrides?.[lowerText];
+  let result = customMatch;
+
+  if (!result) {
+    // Swap override terms in the source first so Google translates around them.
+    let source = text;
+    if (langOverrides) {
+      for (const [key, value] of Object.entries(langOverrides)) {
+        source = source.replace(new RegExp(escapeRegex(key), 'gi'), value);
+      }
+    }
+    result = (await translate.translate(source, lang))[0];
+  }
+
+  if (langOverrides) {
+    for (const [key, value] of Object.entries(langOverrides)) {
+      // \b never matches between CJK characters, so only use it for ASCII keys.
+      const escaped = escapeRegex(key);
+      const pattern = /^\w+$/.test(key) ? `\\b${escaped}\\b` : escaped;
+      result = result.replace(new RegExp(pattern, 'gi'), value);
     }
   }
 
@@ -154,7 +260,7 @@ app.post('/translate', async (req, res) => {
 
     if (detected !== 'ko') {
       const koText = await translateTo(text, lowerText, 'ko');
-      response.ko = { text: koText, romanization: romanize.romanize(koText) };
+      response.ko = { text: koText, romanization: romanizeKorean(koText) };
     }
 
     if (detected !== 'en') {

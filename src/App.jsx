@@ -5,6 +5,14 @@ import './styles.css';
 
 let debounceTimeout;
 
+function isHangul(str) {
+  return /^[\p{Script=Hangul}\s]+$/u.test(str);
+}
+
+function isEnglish(str) {
+  return /^[A-Za-z\s.,!?'"-]+$/.test(str);
+}
+
 export default function App() {
   const [text, setText] = useState('');
   const [results, setResults] = useState(null);
@@ -77,20 +85,15 @@ export default function App() {
     }
   }
 
-  function formatJapaneseCell(block) {
-    return block.furigana ? `${block.text} (${block.furigana})` : block.text;
-  }
-
   function handleSaveToStudy() {
     if (!results) return;
 
-    const word = results.detected === 'ja' ? formatJapaneseCell(results.ja) : text.trim();
-    const translations = [];
-    if (results.detected !== 'ja') translations.push(formatJapaneseCell(results.ja));
-    if (results.ko) translations.push(results.ko.text);
-    if (results.en) translations.push(results.en.text);
+    const input = text.trim();
+    const japanese = results.ja.text;
+    const korean = results.ko?.text ?? (isHangul(input) ? input : '');
+    const english = results.en?.text ?? (isEnglish(input) ? input : '');
 
-    saveRowRef.current(word, translations[0] ?? '', translations[1] ?? '');
+    saveRowRef.current(japanese, korean, english, results.ja.furigana ?? '');
   }
 
   const showResult = results && !status.startsWith('Error');

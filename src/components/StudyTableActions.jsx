@@ -6,7 +6,7 @@ function escapeHtml(value) {
 
 export default function StudyTableActions({ rows, onClear }) {
   function copyTable() {
-    const header = ['Word', 'Translation', 'Translation 2'];
+    const header = ['Japanese', 'Korean', 'English'];
     const lines = [header, ...rows.map(row => [row.word, row.translation ?? '', row.translation2 ?? ''])];
     const text = lines.map(cols => cols.join('\t')).join('\n');
 

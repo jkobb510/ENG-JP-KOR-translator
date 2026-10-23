@@ -1,22 +1,19 @@
 import { useState } from 'react';
-import imageIcon from '../image.png';
 import { useStudyRows } from '../hooks/useStudyRows.js';
 import ImageModal from './ImageModal.jsx';
 import StudyTableActions from './StudyTableActions.jsx';
-import DeleteRowButton from './DeleteRowButton.jsx';
-import EditableCell from './EditableCell.jsx';
-import RecordButton from './RecordButton.jsx';
+import StudyRow from './StudyRow.jsx';
 
 export default function StudyTable({ onSaveRef }) {
   const { rows, addRow, saveRow, deleteRow, clearRows } = useStudyRows();
   const [imageModalIndex, setImageModalIndex] = useState(null);
 
-  function handleAddRow(word, translation, translation2) {
+  function handleAddRow(word, translation, translation2, furigana) {
     if (!word || !translation) {
       alert('Please enter text and get a translation first.');
       return;
     }
-    addRow({ word, translation, translation2 });
+    addRow({ word, translation, translation2, furigana });
   }
 
   function updateCell(index, field, value) {
@@ -40,49 +37,24 @@ export default function StudyTable({ onSaveRef }) {
         <table className="study-table">
           <thead>
             <tr>
-              <th>Word</th>
-              <th>Translation</th>
-              <th>Translation 2</th>
-              <th>Add image</th>
-              <th>Record</th>
-              <th>Delete</th>
+              <th>Japanese</th>
+              <th>Korean</th>
+              <th>English</th>
+              <th>Img</th>
+              <th>Del</th>
             </tr>
           </thead>
           <tbody id="studyTableBody">
             {rows.map((row, i) => (
-              <tr key={row.id}>
-                <EditableCell
-                  value={row.word}
-                  onSave={(value) => updateCell(i, 'word', value)}
-                  onKeyDown={handleCellKeyDown}
-                />
-                <EditableCell
-                  value={row.translation}
-                  onSave={(value) => updateCell(i, 'translation', value)}
-                  onKeyDown={handleCellKeyDown}
-                />
-                <EditableCell
-                  value={row.translation2}
-                  onSave={(value) => updateCell(i, 'translation2', value)}
-                  onKeyDown={handleCellKeyDown}
-                />
-                <td>
-                  <button
-                    type="button"
-                    className="add-text-to-image-btn"
-                    aria-label="Add image"
-                    onClick={() => setImageModalIndex(i)}
-                  >
-                    <img src={imageIcon} alt="" />
-                  </button>
-                </td>
-                <td>
-                  <RecordButton row={row} onUpdateRow={saveRow} />
-                </td>
-                <td>
-                  <DeleteRowButton onClick={() => deleteRow(row.id)} />
-                </td>
-              </tr>
+              <StudyRow
+                key={row.id}
+                row={row}
+                onUpdateCell={(field, value) => updateCell(i, field, value)}
+                onSaveRow={saveRow}
+                onDelete={() => deleteRow(row.id)}
+                onAddImage={() => setImageModalIndex(i)}
+                onCellKeyDown={handleCellKeyDown}
+              />
             ))}
           </tbody>
         </table>
