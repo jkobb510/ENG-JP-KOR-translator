@@ -3,17 +3,7 @@ import useTranslator from './hooks/useTranslator.js';
 import './styles.css';
 
 export default function App() {
-  const {
-    text,
-    results,
-    status,
-    pronounceDisabled,
-    saveRowRef,
-    handleTextChange,
-    handlePronounce,
-    handleSaveToStudy,
-    showResult
-  } = useTranslator();
+  const { text, results, status, pronounceDisabled, saveRowRef, handleTextChange, handlePronounce, handleSaveToStudy, showResult } = useTranslator();
 
   return (
     <>

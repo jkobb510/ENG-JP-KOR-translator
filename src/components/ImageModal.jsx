@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import importImgIcon from '../assets/import-img.png';
+import resizeImageFile from '../utils/resizeImageFile.js';
 
 function handleCellKeyDown(ev) {
   if (ev.key === 'Enter') {
@@ -11,33 +12,22 @@ function handleCellKeyDown(ev) {
 export default function ImageModal({ row, onClose, onUpdateRow }) {
   const importFileInputRef = useRef(null);
 
-  function handleTitleBlur(ev) {
-    const [word = '', translation = '', translation2 = ''] = ev.target.textContent
-      .split(' - ')
-      .map(part => part.trim());
+  function handleTitleBlur(event) {
+    const title = event.target.textContent;
+    const parts = title.split(' - ');
+    const word = parts[0]?.trim() ?? '';
+    const translation = parts[1]?.trim() ?? '';
+    const translation2 = parts[2]?.trim() ?? '';
     onUpdateRow({ ...row, word, translation, translation2 });
   }
 
-  function saveImageFile(file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const maxDim = 1000;
-        const scale = Math.min(1, maxDim / img.width, maxDim / img.height);
-        const width = Math.round(img.width * scale);
-        const height = Math.round(img.height * scale);
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-
-        onUpdateRow({ ...row, image: canvas.toDataURL('image/jpeg', 0.8) });
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
+  async function saveImageFile(file) {
+    try {
+      const image = await resizeImageFile(file);
+      onUpdateRow({ ...row, image });
+    } catch (error) {
+      console.error('Failed to import image:', error);
+    }
   }
 
   function handleImagePaste(ev) {
@@ -48,7 +38,7 @@ export default function ImageModal({ row, onClose, onUpdateRow }) {
       if (item.type.startsWith('image/')) {
         const file = item.getAsFile();
         if (!file) continue;
-        saveImageFile(file);
+        void saveImageFile(file);
         break;
       }
     }
@@ -57,7 +47,7 @@ export default function ImageModal({ row, onClose, onUpdateRow }) {
   function handleImageDrop(ev) {
     ev.preventDefault();
     const file = [...(ev.dataTransfer?.files ?? [])].find(f => f.type.startsWith('image/'));
-    if (file) saveImageFile(file);
+    if (file) void saveImageFile(file);
   }
 
   function handleImageDragOver(ev) {
@@ -68,7 +58,7 @@ export default function ImageModal({ row, onClose, onUpdateRow }) {
     const file = ev.target.files?.[0];
     ev.target.value = '';
     if (!file) return;
-    saveImageFile(file);
+    void saveImageFile(file);
   }
 
   return (

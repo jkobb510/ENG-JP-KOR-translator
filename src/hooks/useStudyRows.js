@@ -1,18 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  getAllRows,
-  addRow as addRowToDb,
-  updateRow,
-  deleteRow as deleteRowFromDb,
-  clearRows as clearRowsInDb,
-} from '../db.js';
-import {
-  fetchRemoteRows,
-  createRemoteRow,
-  updateRemoteRow,
-  deleteRemoteRow,
-  clearRemoteRows,
-} from '../api/rows.js';
+import { getAllRows, addRow as addRowToDb, updateRow, deleteRow as deleteRowFromDb, clearRows as clearRowsInDb } from '../db.js';
+import { fetchRemoteRows, createRemoteRow, updateRemoteRow, deleteRemoteRow, clearRemoteRows } from '../api/rows.js';
 
 // Remote sync is best-effort; IndexedDB stays the local source of truth when the server is unreachable.
 function logRemoteError(action, error) {
