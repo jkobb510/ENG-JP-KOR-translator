@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import importImgIcon from '../import-img.png';
+import importImgIcon from '../assets/import-img.png';
 
 function handleCellKeyDown(ev) {
   if (ev.key === 'Enter') {

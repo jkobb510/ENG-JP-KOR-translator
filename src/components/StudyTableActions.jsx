@@ -1,4 +1,4 @@
-import copyIcon from '../copy.png';
+import copyIcon from '../assets/copy.png';
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));

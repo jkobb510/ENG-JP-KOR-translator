@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import micIcon from '../mic.png';
-import micListeningIcon from '../mic-listening.png';
-import playIcon from '../play.png';
-import pauseIcon from '../pause.png';
-import deleteRecordingIcon from '../deleteRecording.png';
+import micIcon from '../assets/mic.png';
+import micListeningIcon from '../assets/mic-listening.png';
+import playIcon from '../assets/play.png';
+import pauseIcon from '../assets/pause.png';
+import deleteRecordingIcon from '../assets/deleteRecording.png';
 
 export default function RecordButton({ row, onUpdateRow }) {
   const [state, setState] = useState(row.audio ? 'saved' : 'idle');

@@ -1,0 +1,101 @@
+{
+  "digits": [
+    { "ascii": "0", "fullwidth": "０", "reading": "ぜろ" },
+    { "ascii": "1", "fullwidth": "１", "reading": "いち" },
+    { "ascii": "2", "fullwidth": "２", "reading": "に" },
+    { "ascii": "3", "fullwidth": "３", "reading": "さん" },
+    { "ascii": "4", "fullwidth": "４", "reading": "よん" },
+    { "ascii": "5", "fullwidth": "５", "reading": "ご" },
+    { "ascii": "6", "fullwidth": "６", "reading": "ろく" },
+    { "ascii": "7", "fullwidth": "７", "reading": "なな" },
+    { "ascii": "8", "fullwidth": "８", "reading": "はち" },
+    { "ascii": "9", "fullwidth": "９", "reading": "きゅう" }
+  ],
+  "numberUnits": [
+    { "value": 100000000, "reading": "おく" },
+    { "value": 10000, "reading": "まん" },
+    { "value": 1000, "reading": "せん" },
+    { "value": 100, "reading": "ひゃく" },
+    { "value": 10, "reading": "じゅう" }
+  ],
+  "irregularNumberReadings": {
+    "300": "さんびゃく",
+    "600": "ろっぴゃく",
+    "800": "はっぴゃく",
+    "3000": "さんぜん",
+    "8000": "はっせん"
+  },
+  "counters": {
+    "hour": "時",
+    "month": "月",
+    "minute": "分"
+  },
+  "hourReadings": {
+    "1": "いち",
+    "2": "に",
+    "3": "さん",
+    "4": "よ",
+    "5": "ご",
+    "6": "ろく",
+    "7": "しち",
+    "8": "はち",
+    "9": "く",
+    "10": "じゅう",
+    "11": "じゅういち",
+    "12": "じゅうに"
+  },
+  "monthReadings": {
+    "1": "いち",
+    "2": "に",
+    "3": "さん",
+    "4": "し",
+    "5": "ご",
+    "6": "ろく",
+    "7": "しち",
+    "8": "はち",
+    "9": "く",
+    "10": "じゅう",
+    "11": "じゅういち",
+    "12": "じゅうに"
+  },
+  "minuteReadings": {
+    "1": "いっ",
+    "3": "さん",
+    "4": "よん",
+    "6": "ろっ",
+    "8": "はっ",
+    "10": "じゅっ"
+  },
+  "minutePunNumbers": [1, 3, 4, 6, 8, 10],
+  "minuteEndings": {
+    "pun": "ぷん",
+    "fun": "ふん",
+    "ten": "じゅう",
+    "irregularTen": "じゅっ"
+  },
+  "particleReadings": {
+    "は": "わ",
+    "へ": "え"
+  },
+  "particlePartsOfSpeech": ["助詞", "感動詞"],
+  "monthReading": "がつ",
+  "punctuation": {
+    "。": ".",
+    "、": ",",
+    "：": ":",
+    "；": ";",
+    "！": "!",
+    "？": "?",
+    "，": ",",
+    "．": ".",
+    "「": "\"",
+    "」": "\"",
+    "（": "(",
+    "）": ")"
+  },
+  "scriptPatterns": {
+    "japaneseKana": "[\\p{Script=Hiragana}\\p{Script=Katakana}]",
+    "koreanHangul": "\\p{Script=Hangul}",
+    "kanji": "[\\u4e00-\\u9faf]"
+  }
+}

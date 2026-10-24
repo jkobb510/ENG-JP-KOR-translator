@@ -2,36 +2,33 @@
 
 ## Description
 
-This application is a full-stack translator featuring a Node.js/Express server-side rendered frontend and API deployed on Railway. It prioritizes local custom translations from `overrides.json` and falls back to the **Google Cloud Translation API (v2)** for all other text. It also provides high-quality text-to-speech pronunciation using **Google Cloud Text-to-Speech API**.
+This application provides an English, Japanese, and Korean study translator. A React frontend is built with Vite and served by an Express API. Translation uses custom rules from `overrides.json` and the Google Cloud Translation API (v2); pronunciation uses Google Cloud Text-to-Speech.
 
 ---
 
 ## Features
 
 * **Custom Overrides:** Exact input matches are served instantly from `overrides.json`, reducing API calls.
-* **Google Cloud Translation API:** Handles standard translations for non-overridden inputs.
-* **High-Quality Pronunciation:** Uses Google Cloud Text-to-Speech with Neural2 voices for Japanese and Korean.
-* **Language Swap:** One-click button to swap input and target languages (like Google Translate).
-* **SSR + Modular Frontend:** Express renders the initial page while ESM modules (`translate.js`, `pronounce.js`, `swap.js`, `selectLanguage.js`) handle interactive behavior.
-* **Custom Language Selectors:** Accessible, keyboard-navigable dropdowns with smooth animations.
-* **CORS-Enabled Backend:** Configurable via `ALLOWED_ORIGINS` environment variable for secure cross-origin requests.
-* **PR Preview Deployments:** Railway automatically creates preview environments for pull requests.
+* **Study translations:** Produces Japanese readings and romanization, Korean romanization, and available English translations.
+* **Japanese and Korean pronunciation:** Uses Google Cloud Text-to-Speech Neural2 voices.
+* **Study table:** Stores study rows locally in IndexedDB and can synchronize them with the server.
+* **Custom translation rules:** Uses `overrides.json` to apply project-specific translations.
+* **CORS configuration:** The Express API accepts configured origins through `ALLOWED_ORIGINS`.
 
 ---
 
 ## Architecture
 
-### Backend (Railway)
-- **Hosting:** Railway ([https://translator-jp-kr-67af.up.railway.app]([https://translator-backend-production-67af.up.railway.app](https://translator-jp-kr-67af.up.railway.app))
-- **Framework:** Express.js
-- **APIs:** Google Cloud Translation v2, Google Cloud Text-to-Speech
-- **Environment:** Node.js with CommonJS modules
+### Frontend
+- React application under `src/`, built with Vite into `dist/`.
+- In development, Vite proxies `/translate`, `/pronounce`, and `/api` to the Express server at `http://localhost:3000`.
+- In production, Express serves the built frontend and API from the same origin.
 
-### Frontend (SSR via Railway)
-- **Hosting:** Railway (same service/domain as API)
-- **Rendering:** Express + EJS for the initial page (`/`)
-- **Assets:** Static JS/CSS served from `public/`
-- **API Calls:** Same-origin endpoints (`/translate`, `/pronounce`)
+### Backend
+- Express.js with CommonJS modules under `src/server/`.
+- `server.js` is the root startup entry point. It loads configuration, initializes the database and Japanese tokenizer, then starts listening.
+- Translation and speech use Google Cloud Translation v2 and Google Cloud Text-to-Speech.
+- Study rows are stored in PostgreSQL when `POSTGRES_PRIVATE_URL` or `DATABASE_URL` is configured. The browser also maintains local rows in IndexedDB.
 
 ---
 
@@ -39,8 +36,8 @@ This application is a full-stack translator featuring a Node.js/Express server-s
 
 * **Node.js** (v18 or higher)
 * **Google Cloud Project:** With Translation API and Text-to-Speech API enabled
-* **Service Account Key:** JSON key file from Google Cloud IAM
-* **Railway Account:** For backend deployment (free tier available)
+* **Google Cloud credentials:** A service account key file or the `GOOGLE_CLOUD_KEY_JSON` environment variable
+* **PostgreSQL:** Optional; configure a connection URL to enable server-side study-row synchronization
 
 ---
 
@@ -64,38 +61,33 @@ npm install
 Create a `.env` file in the project root:
 
 ```env
-GOOGLE_CLOUD_KEY_JSON=<paste-your-service-account-json-here>
-ALLOWED_ORIGINS=https://jkobb510.github.io,https://translator-backend-production-67af.up.railway.app
+GOOGLE_CLOUD_KEY_JSON=<service-account-json>
+ALLOWED_ORIGINS=http://localhost:5173,https://your-production-domain.example
+DATABASE_URL=postgresql://user:password@host:5432/database
 PORT=3000
 ```
 
-**Note:** For Railway deployment, set `GOOGLE_CLOUD_KEY_JSON` and `ALLOWED_ORIGINS` as environment variables in the Railway dashboard (not in `.env`).
+`DATABASE_URL` is optional. `POSTGRES_PRIVATE_URL` takes precedence when both database variables are set. In production, configure secrets and origins in the hosting provider rather than committing them to `.env`. If `ALLOWED_ORIGINS` is empty, the API allows all origins; set it explicitly in production.
 
 ### 4. File Structure
 
 ```
 translator/
-├── .github/
-│   └── workflows/
-│       └── static.yml          # GitHub Pages deployment workflow
-├── node_modules/
-├── public/                     # Frontend (deployed to GitHub Pages)
-│   ├── index.html
-│   ├── styles.css
-│   ├── script.js               # Main entry point
-│   ├── translate.js            # Translation logic
-│   ├── pronounce.js            # TTS pronunciation
-│   ├── swap.js                 # Language swap button
-│   ├── selectLanguage.js       # Custom dropdowns
-│   └── package.json            # {"type": "module"} for ESM
-├── tests/
-│   ├── api.test.mjs            # API tests
-│   └── unit.test.mjs           # Unit tests
+├── src/
+│   ├── api/                    # Frontend API clients
+│   ├── components/             # React UI components
+│   ├── hooks/                  # Study-row state and synchronization
+│   ├── server/                 # Express app, routes, translation and speech logic
+│   │   ├── translation-data.json
+│   │   └── toKana.js
+│   ├── App.jsx
+│   ├── db.js                   # Browser IndexedDB storage
+│   └── main.jsx
+├── tests/                      # Jest frontend tests
 ├── overrides.json              # Custom translation overrides
 ├── package.json
-├── package-lock.json
-├── server.js                   # Express backend
-└── README.md
+├── server.js                   # Backend startup entry point
+└── vite.config.mjs
 ```
 
 ---
@@ -104,30 +96,37 @@ translator/
 
 ### Running Locally
 
-#### 1. Start the Backend Server
+#### Start the backend
 
 ```bash
 npm start
 ```
 
-Server will run on `http://localhost:3000` after Kuromoji tokenizer initializes.
+The server listens on `http://localhost:3000` after the Kuromoji tokenizer initializes.
 
-#### 2. Access the App
+#### Start the frontend in development
 
-Open `http://localhost:3000` in your browser.
+In another terminal, run:
+
+```bash
+npm run dev
+```
+
+Open the Vite URL shown in the terminal (normally `http://localhost:5173`). API requests are proxied to the backend.
+
+#### Build the production frontend
+
+```bash
+npm run build
+```
+
+After building, `npm start` serves the frontend from `dist/` together with the API.
 
 ### Deployment
 
 #### Railway (App + API)
 
-1. Push code to GitHub
-2. Connect repository to Railway
-3. Set environment variables:
-   - `GOOGLE_CLOUD_KEY_JSON`: Your service account JSON
-   - `ALLOWED_ORIGINS`: `https://jkobb510.github.io,<your-railway-url>`
-4. Railway auto-deploys on push to `main`
-
-Access both the UI and API from your Railway URL after deployment.
+Deploy the repository to a Node.js host that supports the configured environment variables and, if server-side row sync is needed, PostgreSQL. The start command is `npm start`; the `postinstall` script builds the Vite frontend. Set `GOOGLE_CLOUD_KEY_JSON`, `ALLOWED_ORIGINS`, and the database connection URL in the host configuration. Express serves both the built UI and API from the deployed origin.
 
 ---
 
@@ -138,18 +137,27 @@ Access both the UI and API from your Railway URL after deployment.
 **Request Body:**
 ```json
 {
-  "text": "hello",
-  "input": "en",
-  "target": "ja"
+  "text": "hello"
 }
 ```
 
-**Response:**
+**Response shape:**
 ```json
 {
-  "translation": "こんにちは"
+  "detected": "en",
+  "ja": {
+    "text": "こんにちは",
+    "furigana": null,
+    "romanization": "konnichiwa"
+  },
+  "ko": {
+    "text": "안녕하세요",
+    "romanization": "annyeonghaseyo"
+  }
 }
 ```
+
+Depending on the detected input language, the response may also contain an `en` translation. Japanese is always included.
 
 ### `POST /pronounce`
 
@@ -167,11 +175,25 @@ Access both the UI and API from your Railway URL after deployment.
 
 **Response:** `"ok"` (for Railway health checks)
 
+### Study rows
+
+Study-row endpoints require a configured PostgreSQL database. They are mounted under `/api/rows`:
+
+| Method | Path | Behavior |
+|--------|------|----------|
+| `GET` | `/api/rows` | List study rows |
+| `POST` | `/api/rows` | Create a row; accepts `word`, `translation`, `translation2`, `furigana`, `image`, and `audio` |
+| `PUT` | `/api/rows/:id` | Replace a row's editable fields |
+| `DELETE` | `/api/rows/:id` | Delete a row |
+| `DELETE` | `/api/rows` | Clear all server rows |
+
+Without a database URL, these endpoints return `503`; the frontend can still use local IndexedDB storage.
+
 ---
 
 ## Testing
 
-Application uses **Jest** with ESM support and jsdom for browser API testing.
+The project uses Jest and jsdom for frontend tests.
 
 ### Run Tests
 
@@ -179,12 +201,7 @@ Application uses **Jest** with ESM support and jsdom for browser API testing.
 npm test
 ```
 
-### Test Files
-
-- `tests/api.test.mjs`: Translation API integration tests
-- `tests/unit.test.mjs`: DOM manipulation and UI logic tests
-
-**Note:** Tests use dynamic imports (`await import(...)`) to avoid top-level DOM dependencies.
+The current test suite is in `tests/App.test.jsx`.
 
 ---
 
@@ -192,9 +209,11 @@ npm test
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `GOOGLE_CLOUD_KEY_JSON` | Service account JSON (for Railway) | `{"type":"service_account",...}` |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to key file (local only) | `/path/to/key.json` |
+| `GOOGLE_CLOUD_KEY_JSON` | Service account JSON; startup writes it to a local credentials file | Service-account JSON |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Optional path to an existing service account key file | `/path/to/key.json` |
 | `ALLOWED_ORIGINS` | Comma-separated allowed origins | `https://your-domain.com` |
+| `POSTGRES_PRIVATE_URL` | Preferred PostgreSQL connection URL | `postgresql://...` |
+| `DATABASE_URL` | Fallback PostgreSQL connection URL | `postgresql://...` |
 | `PORT` | Server port (Railway sets this automatically) | `3000` |
 
 ---
@@ -205,15 +224,16 @@ npm test
 - Express.js
 - Google Cloud Translation API v2
 - Google Cloud Text-to-Speech API
+- PostgreSQL (`pg`)
 - Kuromoji (Japanese morphological analysis)
 - Wanakana (Kana/Romaji conversion)
 - @romanize/korean (Korean romanization)
 - CORS middleware
 
 ### Frontend
-- EJS (SSR templates)
-- Vanilla JavaScript (ES Modules)
-- Custom accessible dropdowns
+- React
+- Vite
+- IndexedDB for local study-row storage
 - Fetch API for backend communication
 
 ### DevOps
@@ -258,7 +278,7 @@ ISC
 ## Troubleshooting
 
 ### CORS Errors
-- Ensure `ALLOWED_ORIGINS` in Railway includes your frontend origin when making cross-origin requests
+- Ensure `ALLOWED_ORIGINS` includes the frontend origin when making cross-origin requests
 - Check browser console for blocked origin details
 
 ### Backend Crashes
@@ -267,6 +287,5 @@ ISC
 - Ensure health check endpoint `/health` is accessible
 
 ### Tests Failing
-- Run `npm install` to ensure jest and jest-environment-jsdom are installed
-- Verify `public/package.json` contains `{"type": "module"}`
-- Use `NODE_OPTIONS=--experimental-vm-modules jest` to enable ESM
+- Run `npm install` to install project dependencies
+- Run `npm test -- --runInBand` to execute tests sequentially and inspect failures

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import imageIcon from '../image.png';
-import pronounceIcon from '../pronounce.png';
+import imageIcon from '../assets/image.png';
+import pronounceIcon from '../assets/pronounce.png';
 import { getPronounceAPI } from '../api/translate.js';
 import DeleteRowButton from './DeleteRowButton.jsx';
 import EditableCell from './EditableCell.jsx';
