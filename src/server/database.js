@@ -26,6 +26,7 @@ async function initializeDatabase() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
+    await pool.query("ALTER TABLE study_rows ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT ''");
   } catch (error) {
     console.error('Failed to create study_rows table:', error.message);
   }

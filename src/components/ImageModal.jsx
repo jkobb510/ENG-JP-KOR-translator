@@ -19,6 +19,12 @@ export default function ImageModal({ row, onClose, onUpdateRow }) {
     onUpdateRow({ ...row, word, translation, translation2 });
   }
 
+  function handleNotesBlur(event) {
+    const notes = event.target.value;
+    if (notes === (row?.notes ?? '')) return;
+    onUpdateRow({ ...row, notes });
+  }
+
   async function saveImageFile(file) {
     try {
       const image = await resizeImageFile(file);
@@ -62,6 +68,36 @@ export default function ImageModal({ row, onClose, onUpdateRow }) {
   return (
     <div className="image-modal-overlay" onClick={onClose}>
       <div className="image-modal" onClick={(ev) => ev.stopPropagation()}>
+        <button
+          type="button"
+          className="image-modal-close-btn"
+          aria-label="Close"
+          onClick={onClose}
+        >
+          ✕
+        </button>
+        <div className="image-modal-paste-wrapper">
+          <div
+            className="image-modal-paste-area"
+            tabIndex={0}
+            onPaste={handleImagePaste}
+            onDrop={handleImageDrop}
+            onDragOver={handleImageDragOver}
+          >
+            {row?.image ? (
+              <img src={row.image} alt="" />
+            ) : (
+              <span>Paste or drag an image here (Ctrl/Cmd+V)</span>
+            )}
+          </div>
+          <label
+            className="copy-table-btn import-image-btn"
+            aria-label="Import image"
+            onClick={(ev) => { ev.preventDefault(); importFileInputRef.current?.click(); }}
+          >
+            <img src={importImgIcon} alt="" />
+          </label>
+        </div>
         <div
           className="image-modal-title"
           contentEditable
@@ -71,33 +107,6 @@ export default function ImageModal({ row, onClose, onUpdateRow }) {
         >
           {[row?.word, row?.translation, row?.translation2].filter(Boolean).join(' - ')}
         </div>
-        <button
-          type="button"
-          className="image-modal-close-btn"
-          aria-label="Close"
-          onClick={onClose}
-        >
-          ✕
-        </button>
-        <div
-          className="image-modal-paste-area"
-          tabIndex={0}
-          onPaste={handleImagePaste}
-          onDrop={handleImageDrop}
-          onDragOver={handleImageDragOver}
-        >
-          {row?.image ? (
-            <img src={row.image} alt="" />
-          ) : (
-            <span>Paste or drag an image here (Ctrl/Cmd+V)</span>
-          )}
-        </div>
-        <label
-          className="copy-table-btn import-image-btn"
-          onClick={(ev) => { ev.preventDefault(); importFileInputRef.current?.click(); }}
-        >
-          <img src={importImgIcon} alt="" /> Import Image
-        </label>
         <input
           ref={importFileInputRef}
           type="file"
@@ -105,6 +114,14 @@ export default function ImageModal({ row, onClose, onUpdateRow }) {
           hidden
           onChange={handleImportImage}
         />
+        <label className="image-modal-notes">
+          Notes
+          <textarea
+            key={row?.id}
+            defaultValue={row?.notes ?? ''}
+            onBlur={handleNotesBlur}
+          />
+        </label>
       </div>
     </div>
   );

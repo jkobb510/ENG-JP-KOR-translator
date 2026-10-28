@@ -2,7 +2,7 @@ const express = require('express');
 const { pool, requireDatabase } = require('./database');
 
 const router = express.Router();
-const rowColumns = ['word', 'translation', 'translation2', 'furigana', 'image', 'audio'];
+const rowColumns = ['word', 'translation', 'translation2', 'furigana', 'image', 'audio', 'notes'];
 
 function rowValues(body) {
   return rowColumns.map(column => {
@@ -29,7 +29,7 @@ router.get('/', requireDatabase, async (_req, res) => {
 router.post('/', requireDatabase, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `INSERT INTO study_rows (${rowColumns.join(', ')}) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      `INSERT INTO study_rows (${rowColumns.join(', ')}) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
       rowValues(req.body)
     );
     res.status(201).json(rows[0]);
@@ -46,7 +46,7 @@ router.put('/:id', requireDatabase, async (req, res) => {
   try {
     const assignments = rowColumns.map((column, index) => `${column} = $${index + 1}`).join(', ');
     const result = await pool.query(
-      `UPDATE study_rows SET ${assignments}, updated_at = now() WHERE id = $7`,
+      `UPDATE study_rows SET ${assignments}, updated_at = now() WHERE id = $8`,
       [...rowValues(req.body), id]
     );
     if (!result.rowCount) return res.status(404).json({ error: 'Row not found.' });

@@ -14,6 +14,7 @@ async function toRemote(row) {
     translation2: row.translation2 ?? '',
     furigana: row.furigana ?? '',
     image: row.image ?? null,
+    notes: row.notes ?? '',
     audio: row.audio ? await blobToDataUrl(row.audio) : null,
   };
 }
