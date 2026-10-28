@@ -37,9 +37,8 @@ export default function StudyTable({ onSaveRef }) {
         <table className="study-table">
           <thead>
             <tr>
-              <th>Japanese</th>
-              <th>Korean</th>
-              <th>English</th>
+              <th>To Study</th>
+              <th aria-label="Flip phrase" />
               <th>Img</th>
               <th>Del</th>
             </tr>

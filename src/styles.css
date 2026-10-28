@@ -285,14 +285,30 @@ textarea {
 
 .study-table td {
   padding: 10px 16px;
+  font-size: 14px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.study-table td[contenteditable="true"] {
+.study-table th:nth-child(n+2),
+.study-table td:nth-child(n+2) {
+  box-sizing: border-box;
+  width: 48px;
+  padding-left: 6px;
+  padding-right: 6px;
+  text-align: center;
+}
+
+.study-table th:last-child,
+.study-table td:last-child {
+  width: 58px;
+  padding-right: 16px;
+}
+
+.study-table .editable-cell-content[contenteditable="true"] {
   cursor: text;
 }
 
-.study-table td[contenteditable="true"]:focus {
+.study-table .editable-cell-content[contenteditable="true"]:focus {
   outline: 2px solid #45a049;
   outline-offset: -2px;
   background-color: rgba(255,255,255,0.03);
@@ -325,10 +341,28 @@ textarea {
   width: 24px;
   padding: 0;
   border-radius: 4px;
-  margin-left: 0;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.flip-study-word-btn {
+  height: 24px;
+  width: 24px;
+  padding: 0;
+  border-radius: 5px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flip-study-word-btn img {
+  height: 16px;
+  width: 16px;
+  object-fit: contain;
+  display: block;
 }
 
 .add-text-to-image-btn img {
@@ -515,12 +549,93 @@ textarea {
   visibility: visible;
 }
 
-.study-table th:nth-child(-n+3),
-.study-table td:nth-child(-n+3) {
-  width: 200px;
-  min-width: 200px;
-  max-width: 200px;
+.study-table th:first-child,
+.study-word-cell {
+  box-sizing: border-box;
+  width: 350px;
+  min-width: 350px;
+  max-width: 350px;
+}
+
+.study-word-cell {
+  --study-word-content-width: calc(350px - 32px);
+  text-align: left;
+}
+
+.study-flip-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  align-items: start;
+  width: max-content;
+  max-width: var(--study-word-content-width);
+  text-align: left;
+}
+
+.study-flip-face {
+  grid-area: 1 / 1;
+  align-self: start;
+  width: 100%;
+  min-width: 0;
+  max-width: var(--study-word-content-width);
   overflow-wrap: anywhere;
+  backface-visibility: hidden;
+  text-align: left;
+}
+
+.study-flip-face .editable-cell-content {
+  width: max-content;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.study-flip-sizer {
+  display: grid;
+  grid-area: 1 / 1;
+  justify-self: start;
+  align-self: start;
+  justify-items: start;
+  text-align: left;
+  width: max-content;
+  max-width: var(--study-word-content-width);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.study-flip-size-value {
+  grid-area: 1 / 1;
+  justify-self: start;
+  text-align: left;
+  width: max-content;
+  max-width: var(--study-word-content-width);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.study-flip-front {
+  transform: perspective(1000px) rotateY(0deg);
+}
+
+.study-flip-back {
+  transform: perspective(1000px) rotateY(180deg);
+  white-space: pre-wrap;
+}
+
+.study-flip-card.is-flipping .study-flip-front {
+  transform: perspective(1000px) rotateY(180deg);
+  transition: transform 500ms ease;
+}
+
+.study-flip-card.is-flipping .study-flip-back {
+  transform: perspective(1000px) rotateY(360deg);
+  transition: transform 500ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .study-flip-card.is-flipping .study-flip-front,
+  .study-flip-card.is-flipping .study-flip-back {
+    transition: none;
+  }
 }
 
 .translation-tooltip-actions {

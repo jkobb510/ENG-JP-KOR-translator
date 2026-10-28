@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { getPronounceAPI, getTranslateAPI } from '../api/translate.js';
+import { getTranslateAPI } from '../api/translate.js';
+import usePronunciation from './usePronunciation.js';
 
 const TRANSLATE_DEBOUNCE_MS = 1000;
 
@@ -15,7 +16,7 @@ export default function useTranslator() {
   const [text, setText] = useState('');
   const [results, setResults] = useState(null);
   const [status, setStatus] = useState('');
-  const [pronounceDisabled, setPronounceDisabled] = useState({});
+  const { pronounceDisabled, handlePronounce } = usePronunciation();
   const debounceTimeoutRef = useRef(null);
   const saveRowRef = useRef(() => {});
 
@@ -67,25 +68,6 @@ export default function useTranslator() {
       () => triggerTranslate(nextText),
       TRANSLATE_DEBOUNCE_MS
     );
-  }
-
-  async function handlePronounce(language, spokenText) {
-    if (!spokenText) return;
-
-    setPronounceDisabled((previous) => ({ ...previous, [language]: true }));
-    try {
-      const response = await getPronounceAPI(spokenText, language);
-      if (!response.ok) throw new Error('TTS failed');
-
-      const audioBlob = await response.blob();
-      const audio = new Audio(URL.createObjectURL(audioBlob));
-      await audio.play();
-    } catch (error) {
-      console.error('Pronunciation Error:', error);
-      alert('Failed to pronounce');
-    } finally {
-      setPronounceDisabled((previous) => ({ ...previous, [language]: false }));
-    }
   }
 
   function handleSaveToStudy() {

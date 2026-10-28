@@ -1,60 +1,114 @@
 import { useEffect, useRef, useState } from 'react';
+import useRecordingModal from './useRecordingModal.js';
 
 export default function useAudioRecording(row, onUpdateRow) {
   const [state, setState] = useState(row.audio ? 'saved' : 'idle');
-  const [modalOpen, setModalOpen] = useState(false);
   const recorderRef = useRef(null);
-  const chunksRef = useRef([]);
-  const streamRef = useRef(null);
-  const discardRef = useRef(false);
   const audioRef = useRef(null);
+  const rowRef = useRef(row);
+  rowRef.current = row;
+  const {
+    modalOpen,
+    handlePause,
+    handleFinish,
+    handleContinue,
+    handleDelete
+  } = useRecordingModal({
+    recorderRef,
+    setRecordingState: setState,
+    releaseStream,
+    onDelete: () => {
+      if (row.audio) removeAudioFromRow();
+    }
+  });
 
   function disposeAudio() {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.pause();
-    URL.revokeObjectURL(audio.src);
+    if (!audioRef.current) return;
+    audioRef.current.pause();
+    URL.revokeObjectURL(audioRef.current.src);
     audioRef.current = null;
   }
 
-  function releaseStream() {
-    streamRef.current?.getTracks().forEach(track => track.stop());
-    streamRef.current = null;
+  function releaseStream(stream) { stream?.getTracks().forEach(track => track.stop()); }
+
+  function removeAudioFromRow() {
+    const { audio, ...rowWithoutAudio } = row;
+    onUpdateRow(rowWithoutAudio);
   }
 
-  useEffect(() => () => {
-    disposeAudio();
-    discardRef.current = true;
-    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
-      recorderRef.current.stop();
-    }
-    releaseStream();
+  useEffect(() => {
+    return () => {
+      disposeAudio();
+      const recorder = recorderRef.current;
+      recorderRef.current = null;
+      if (recorder?.state !== 'inactive') recorder?.stop?.();
+      releaseStream(recorder?.stream);
+    };
   }, []);
 
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      const recorder = new MediaRecorder(stream);
-      chunksRef.current = [];
-      discardRef.current = false;
-      recorder.ondataavailable = event => {
-        if (event.data.size) chunksRef.current.push(event.data);
-      };
-      recorder.onstop = () => {
-        releaseStream();
-        if (discardRef.current) return;
+  useEffect(() => { 
+    disposeAudio(); 
+    setState(row.audio ? 'saved' : 'idle'); 
+  }, [row.audio]);
 
-        const audio = new Blob(chunksRef.current, { type: recorder.mimeType });
-        onUpdateRow({ ...row, audio });
-      };
-      recorder.start();
-      recorderRef.current = recorder;
-      setState('recording');
+  async function saveRecording(recorder, chunks) {
+    releaseStream(recorder.stream);
+    if (recorderRef.current !== recorder) return;
+
+    try {
+      const audio = new Blob(chunks, { type: recorder.mimeType });
+      await onUpdateRow({ ...rowRef.current, audio });
     } catch (error) {
-      console.error('Microphone access failed:', error);
-      alert('Could not access the microphone.');
+      if (recorderRef.current !== recorder) return;
+      recorderRef.current = null;
+      setState('idle');
+      console.error('Failed to save recording:', error);
+      return;
+    }
+
+    if (recorderRef.current !== recorder) return;
+    recorderRef.current = null;
+    setState('saved');
+  }
+
+  function startMediaRecorder(stream, request) {
+    const recorder = new MediaRecorder(stream);
+    const chunks = [];
+    request.recorder = recorder;
+    recorderRef.current = recorder;
+    recorder.ondataavailable = event => {
+      if (event.data.size) chunks.push(event.data);
+    };
+    recorder.onstop = () => saveRecording(recorder, chunks);
+    recorder.start();
+    setState('recording');
+  }
+
+  function handleRecordingStartError(error, request, stream) {
+    if (recorderRef.current !== request && recorderRef.current !== request.recorder) return;
+
+    recorderRef.current = null;
+    releaseStream(stream);
+    console.error('Recording failed:', error);
+    setState('idle');
+  }
+
+  async function startRecording() {
+    if (recorderRef.current) return;
+
+    const request = {};
+    let stream;
+    recorderRef.current = request;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (recorderRef.current !== request) {
+        releaseStream(stream);
+        return;
+      }
+
+      startMediaRecorder(stream, request);
+    } catch (error) {
+      handleRecordingStartError(error, request, stream);
     }
   }
 
@@ -63,16 +117,20 @@ export default function useAudioRecording(row, onUpdateRow) {
 
     if (!audioRef.current) {
       const audio = new Audio(URL.createObjectURL(row.audio));
-      audio.onended = () => setState('saved');
+      audio.onended = () => { if (audioRef.current === audio) setState('saved'); };
       audioRef.current = audio;
     }
-    audioRef.current.play();
-    setState('playing');
+    const audio = audioRef.current;
+    audio.play().then(() => {
+      if (audioRef.current === audio) setState('playing');
+    }).catch(() => {
+      if (audioRef.current === audio) setState('saved');
+    });
   }
 
-  function pausePlayback() {
-    audioRef.current?.pause();
-    setState('saved');
+  function pausePlayback() { 
+    audioRef.current?.pause(); 
+    setState('saved'); 
   }
 
   function handleClick() {
@@ -81,9 +139,7 @@ export default function useAudioRecording(row, onUpdateRow) {
         void startRecording();
         break;
       case 'recording':
-        recorderRef.current.pause();
-        setState('paused');
-        setModalOpen(true);
+        handlePause();
         break;
       case 'saved':
         playRecording();
@@ -96,36 +152,10 @@ export default function useAudioRecording(row, onUpdateRow) {
     }
   }
 
-  function handleFinish() {
-    setModalOpen(false);
-    recorderRef.current.stop();
-    setState('saved');
-  }
-
-  function handleContinue() {
-    setModalOpen(false);
-    recorderRef.current.resume();
-    setState('recording');
-  }
-
-  function handleDelete() {
-    setModalOpen(false);
-    discardRef.current = true;
-    recorderRef.current?.stop();
-    chunksRef.current = [];
-    setState('idle');
-
-    if (row.audio) {
-      const { audio, ...rowWithoutAudio } = row;
-      onUpdateRow(rowWithoutAudio);
-    }
-  }
-
   function handleDeleteSaved() {
     disposeAudio();
     setState('idle');
-    const { audio, ...rowWithoutAudio } = row;
-    onUpdateRow(rowWithoutAudio);
+    removeAudioFromRow();
   }
 
   return {

@@ -13,11 +13,9 @@ export default function ImageModal({ row, onClose, onUpdateRow }) {
   const importFileInputRef = useRef(null);
 
   function handleTitleBlur(event) {
-    const title = event.target.textContent;
-    const parts = title.split(' - ');
-    const word = parts[0]?.trim() ?? '';
-    const translation = parts[1]?.trim() ?? '';
-    const translation2 = parts[2]?.trim() ?? '';
+    const [word = '', translation = '', translation2 = ''] = event.target.textContent
+      .split(' - ')
+      .map(part => part.trim());
     onUpdateRow({ ...row, word, translation, translation2 });
   }
 
