@@ -61,11 +61,11 @@ function parseDigits(digitText) {
 function numberToKana(digitText, followingCounter) {
   const number = parseDigits(digitText);
   if (!Number.isSafeInteger(number)) return null;
-  if (followingCounter === translationData.counters.hour) {
-    if (translationData.hourReadings[number]) return translationData.hourReadings[number];
+  if (followingCounter === translationData.counters.hour && translationData.hourReadings[number]) {
+      return translationData.hourReadings[number];
   }
-  if (followingCounter === translationData.counters.month) {
-    if (translationData.monthReadings[number]) return translationData.monthReadings[number];
+  if (followingCounter === translationData.counters.month && translationData.monthReadings[number]) {
+    return translationData.monthReadings[number];
   }
   return integerToKana(number);
 }
@@ -133,6 +133,14 @@ function readParticle(token) {
   return null;
 }
 
+function normalizeReading(surfaceForm, reading) {
+  const hiragana = reading ? wanakana.toHiragana(reading) : surfaceForm;
+  if (hiragana.includes('にっぽん')) {
+    return hiragana.replace(/にっぽん/g, 'にほん');
+  }
+  return hiragana;
+}
+
 function readToken(tokens, tokenIndex) {
   const token = tokens[tokenIndex];
   const surfaceForm = token.surface_form;
@@ -149,8 +157,7 @@ function readToken(tokens, tokenIndex) {
   if (particleReading) 
     return { reading: particleReading, tokensToSkip: 0 };
 
-  const reading = token.reading ? wanakana.toHiragana(token.reading) : surfaceForm;
-  return { reading, tokensToSkip: 0 };
+  return { reading: normalizeReading(surfaceForm, token.reading), tokensToSkip: 0 };
 }
 
 function toReading(inputText) {
