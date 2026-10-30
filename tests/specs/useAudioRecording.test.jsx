@@ -1,28 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import useAudioRecording from '../src/hooks/useAudioRecording.js';
-
-class TestMediaRecorder {
-  state = 'inactive';
-  mimeType = 'audio/webm';
-
-  start() {
-    this.state = 'recording';
-  }
-
-  pause() {
-    this.state = 'paused';
-  }
-
-  resume() {
-    this.state = 'recording';
-  }
-
-  stop() {
-    this.state = 'inactive';
-    this.ondataavailable({ data: new Blob(['audio']) });
-    return this.onstop();
-  }
-}
+import useAudioRecording from '../../src/hooks/useAudioRecording.js';
+import { TestMediaRecorder } from '../TestMediaRecorder.js';
+import { mockMediaDevices } from '../test-utils.js';
 
 describe('useAudioRecording', () => {
   const originalMediaDevices = navigator.mediaDevices;
@@ -45,7 +24,7 @@ describe('useAudioRecording', () => {
     let resolveStream;
     const stream = { getTracks: () => [{ stop: jest.fn() }] };
     const getUserMedia = jest.fn(() => new Promise(resolve => { resolveStream = resolve; }));
-    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } });
+    mockMediaDevices({ getUserMedia });
     global.MediaRecorder = TestMediaRecorder;
     const onUpdateRow = jest.fn().mockResolvedValue(undefined);
     const initialRow = { id: 1, word: 'before' };
@@ -78,10 +57,7 @@ describe('useAudioRecording', () => {
     let resolveStream;
     const stop = jest.fn();
     const stream = { getTracks: () => [{ stop }] };
-    Object.defineProperty(navigator, 'mediaDevices', {
-      configurable: true,
-      value: { getUserMedia: () => new Promise(resolve => { resolveStream = resolve; }) }
-    });
+    mockMediaDevices({ getUserMedia: () => new Promise(resolve => { resolveStream = resolve; }) });
     global.MediaRecorder = TestMediaRecorder;
     const { result, unmount } = renderHook(() => useAudioRecording({ id: 1 }, jest.fn()));
 
@@ -96,10 +72,7 @@ describe('useAudioRecording', () => {
   });
 
   it('returns to idle when microphone access fails', async () => {
-    Object.defineProperty(navigator, 'mediaDevices', {
-      configurable: true,
-      value: { getUserMedia: jest.fn().mockRejectedValue(new Error('permission denied')) }
-    });
+    mockMediaDevices({ getUserMedia: jest.fn().mockRejectedValue(new Error('permission denied')) });
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
     global.alert = jest.fn();
     const { result } = renderHook(() => useAudioRecording({ id: 1 }, jest.fn()));
@@ -115,10 +88,7 @@ describe('useAudioRecording', () => {
   it('releases the stream and returns to idle when recorder startup fails', async () => {
     const stop = jest.fn();
     const stream = { getTracks: () => [{ stop }] };
-    Object.defineProperty(navigator, 'mediaDevices', {
-      configurable: true,
-      value: { getUserMedia: jest.fn().mockResolvedValue(stream) }
-    });
+    mockMediaDevices({ getUserMedia: jest.fn().mockResolvedValue(stream) });
     global.MediaRecorder = class extends TestMediaRecorder {
       start() {
         throw new Error('recorder failed to start');

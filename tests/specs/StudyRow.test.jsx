@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import StudyRow from '../src/components/StudyRow.jsx';
+import StudyRow from '../../src/components/StudyRow.jsx';
 
 describe('StudyRow', () => {
   test('cycles the study phrase through Korean and English', () => {

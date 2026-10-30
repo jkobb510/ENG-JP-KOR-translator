@@ -1,29 +1,9 @@
 import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import App from '../src/App.jsx';
+import App from '../../src/App.jsx';
+import { createJsonResponse, getTranslateCalls, mockTranslateResponse } from '../test-utils.js';
 
 const TRANSLATE_DEBOUNCE_MS = 1000;
-
-function createJsonResponse(body, { ok = true, status = 200 } = {}) {
-  return {
-    ok,
-    status,
-    headers: { get: () => 'application/json' },
-    json: async () => body
-  };
-}
-
-// App also fetches /api/rows on mount; only /translate is stubbed per test.
-function mockTranslateResponse(respond) {
-  fetch.mockImplementation(async (url) => {
-    if (url === '/translate') return respond();
-    return createJsonResponse([]);
-  });
-}
-
-function getTranslateCalls() {
-  return fetch.mock.calls.filter(([url]) => url === '/translate');
-}
 
 async function typeAndWaitForDebounce(value) {
   fireEvent.change(screen.getByPlaceholderText('Enter text'), { target: { value } });

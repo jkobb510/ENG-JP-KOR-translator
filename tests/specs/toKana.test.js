@@ -1,4 +1,4 @@
-const { initTokenizer, toReading } = require('../src/server/toKana.js');
+const { initTokenizer, toReading } = require('../../src/server/toKana.js');
 
 describe('[Unit] toKana', () => {
   beforeAll((done) => {
