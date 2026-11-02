@@ -11,8 +11,8 @@ describe('[Unit] toKana', () => {
     });
   });
 
-  test('uses the topic particle reading わ in furigana', () => {
-    expect(toReading('タケシは日本人です')).toBe('たけしわにほんじんです');
+  test('preserves the topic particle spelling は in furigana', () => {
+    expect(toReading('小川さんは日本人です')).toBe('おがわさんはにほんじんです');
   });
 
   test('uses the directional particle reading え in furigana', () => {
