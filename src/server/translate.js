@@ -10,6 +10,7 @@ const overrides = JSON.parse(fs.readFileSync(path.join(__dirname, '../../overrid
 
 const japaneseKanaPattern = new RegExp(translationData.scriptPatterns.japaneseKana, 'u');
 const koreanHangulPattern = new RegExp(translationData.scriptPatterns.koreanHangul, 'u');
+const japaneseNameHonorificPattern = /([\p{Script=Han}]+)氏(?=[\p{Script=Hiragana}\p{Script=Katakana}、。！？\s]|$)/gu;
 
 const punctuationCharacters = Object.keys(translationData.punctuation)
   .map(character => character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
@@ -62,6 +63,10 @@ async function translateTo(text, normalizedText, targetLanguage, sourceLanguage)
       }
       result = result.replace(new RegExp(replacementPattern, 'gi'), overrideValue);
     }
+  }
+
+  if (targetLanguage === 'ja') {
+    result = result.replace(japaneseNameHonorificPattern, '$1さん');
   }
 
   return result;
